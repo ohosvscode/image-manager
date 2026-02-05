@@ -1,0 +1,14 @@
+{
+  "name": "@arkts/image-manager",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "OpenHarmony/HarmonyOS qemu image manager.",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "scripts": {
+    "build": "tsdown"
+  },
+  "devDependencies": {
+    "tsdown": "^0.20.2"
+  }
+}
