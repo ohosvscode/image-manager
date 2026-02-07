@@ -1,14 +1,43 @@
 {
   "name": "@arkts/image-manager",
-  "version": "0.0.1",
   "type": "module",
+  "version": "0.0.1",
   "description": "OpenHarmony/HarmonyOS qemu image manager.",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.cts",
   "scripts": {
-    "build": "tsdown"
+    "build": "tsdown --dts --format esm,cjs src/index.ts src/default-product-config.ts",
+    "test": "vitest --coverage --ui"
+  },
+  "dependencies": {
+    "@types/progress-stream": "^2.0.5",
+    "@types/unzipper": "^0.10.11",
+    "axios": "^1.13.4",
+    "mitt": "^3.0.1",
+    "progress-stream": "^2.0.0",
+    "unzipper": "^0.12.3"
   },
   "devDependencies": {
-    "tsdown": "^0.20.2"
+    "@antfu/eslint-config": "^7.2.0",
+    "@changesets/cli": "^2.29.8",
+    "@types/node": "^25.2.0",
+    "@vitest/coverage-v8": "4.0.18",
+    "@vitest/ui": "4.0.18",
+    "eslint": "^9.39.2",
+    "pnpm": "^10.28.2",
+    "tsdown": "^0.20.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   }
 }

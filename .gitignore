@@ -1,3 +1,10 @@
 node_modules
 dist
 .DS_Store
+coverage
+test/fixtures/images/**
+!test/fixtures/images/.gitkeep
+test/fixtures/deployed/**
+!test/fixtures/deployed/.gitkeep
+test/fixtures/emulator/**
+!test/fixtures/emulator/.gitkeep
