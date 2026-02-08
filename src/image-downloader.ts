@@ -1,10 +1,10 @@
-import type { AxiosProgressEvent } from 'axios'
+import type { AxiosProgressEvent, AxiosResponse } from 'axios'
 import type { Emitter, EventHandlerMap, Handler } from 'mitt'
 import type Stream from 'node:stream'
 import type { BaseImage } from './images/image'
 import type { LocalImageImpl } from './images/local-image'
 import type { RemoteImageImpl } from './images/remote-image'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import mitt from 'mitt'
 import progress from 'progress-stream'
 import unzipper from 'unzipper'
@@ -67,8 +67,8 @@ export interface ImageDownloader<T extends BaseImage> extends Emitter<ImageDownl
 }
 
 class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements ImageDownloader<T> {
-  emitter = mitt<ImageDownloadEventMap>()
-  all: EventHandlerMap<ImageDownloadEventMap> = this.emitter.all
+  private readonly emitter = mitt<ImageDownloadEventMap>()
+  public readonly all: EventHandlerMap<ImageDownloadEventMap> = this.emitter.all
 
   on(type: string, handler: unknown): void {
     this.emitter.on(type as keyof ImageDownloadEventMap, handler as Handler<ImageDownloadEventMap[keyof ImageDownloadEventMap]>)
@@ -100,30 +100,43 @@ class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements
     return path.resolve(cachePath, path.basename(this.url))
   }
 
-  async startDownload(signal?: AbortSignal): Promise<void> {
+  private async makeRequest(signal?: AbortSignal, startByte: number = 0, retried416 = false): Promise<AxiosResponse<Stream.Readable>> {
+    const { fs } = this.image.getImageManager().getOptions()
+    const cacheFsPath = this.getCacheFsPath()
+    const transformProgress = this.createProgressTransformer(startByte)
+
+    try {
+      return await axios.get<Stream.Readable>(this.url, {
+        headers: startByte > 0 ? { Range: `bytes=${startByte}-` } : {},
+        responseType: 'stream',
+        validateStatus: status => (status === 200 || status === 206),
+        onDownloadProgress: progress => this.emit('download-progress', transformProgress(progress)),
+        signal,
+      })
+    }
+    catch (err) {
+      if (err instanceof AxiosError && err.response?.status === 416 && !retried416) {
+        if (fs.existsSync(cacheFsPath))
+          fs.rmSync(cacheFsPath, { force: true })
+        return this.makeRequest(signal, startByte, true)
+      }
+      throw err
+    }
+  }
+
+  async startDownload(signal?: AbortSignal, retried416 = false): Promise<void> {
     const { fs, cachePath } = this.image.getImageManager().getOptions()
     const cacheFsPath = this.getCacheFsPath()
     if (!fs.existsSync(cachePath))
       fs.mkdirSync(cachePath, { recursive: true })
     const startByte = fs.existsSync(cacheFsPath) ? fs.statSync(cacheFsPath).size : 0
-    const transformProgress = this.createProgressTransformer(startByte)
-    const response = await axios.get<Stream.Readable>(this.url, {
-      headers: startByte > 0 ? { Range: `bytes=${startByte}-` } : {},
-      responseType: 'stream',
-      validateStatus: status => (status === 200 || status === 206),
-      onDownloadProgress: progress => this.emit('download-progress', transformProgress(progress)),
-      signal,
-    })
+    const response = await this.makeRequest(signal, startByte, retried416)
     const isPartialContent = response.status === 206
-    const writeStart = (startByte > 0 && isPartialContent) ? startByte : 0
-    const writeFlags = writeStart > 0 ? 'a' : 'w'
-    if (startByte > 0 && !isPartialContent) {
+    const start = (startByte > 0 && isPartialContent) ? startByte : 0
+    const flags = start > 0 ? 'a' : 'w'
+    if (startByte > 0 && !isPartialContent)
       fs.rmSync(cacheFsPath, { force: true })
-    }
-    const writeStream = fs.createWriteStream(cacheFsPath, {
-      flags: writeFlags,
-      start: writeStart,
-    })
+    const writeStream = fs.createWriteStream(cacheFsPath, { flags, start })
     response.data.pipe(writeStream)
     await new Promise<void>((resolve, reject) => {
       let settled = false
@@ -169,11 +182,12 @@ class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements
     stream.pipe(progressStream).pipe(extractStream)
     await extractStream.promise()
     if (symlinkOpenHarmonySdk) {
+      // 模拟器通过 harmonyos.sdk.path（即 imageBasePath）查找 default/openharmony，必须建在此处
       const symlinkSdkPath = path.resolve(imageBasePath, 'default', 'openharmony')
       if (!fs.existsSync(path.dirname(symlinkSdkPath)))
         fs.mkdirSync(path.dirname(symlinkSdkPath), { recursive: true })
       if (!fs.existsSync(symlinkSdkPath))
-        fs.symlinkSync(sdkPath, symlinkSdkPath)
+        fs.symlinkSync(sdkPath, symlinkSdkPath, 'dir')
     }
   }
 

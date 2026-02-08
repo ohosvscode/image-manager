@@ -9,20 +9,23 @@ const imageBasePath = path.resolve(__dirname, 'fixtures', 'images')
 const deployedPath = path.resolve(__dirname, 'fixtures', 'deployed')
 const emulatorPath = path.resolve(__dirname, 'fixtures', 'emulator')
 const projectRootPath = path.resolve(__dirname, '..')
+const downloadTest = true
 
 describe.sequential('image manager', (it) => {
   let imageManager: ImageManager
 
   it.beforeAll(async () => {
-    for (const filePath of fs.readdirSync(path.resolve(imageBasePath))) {
-      if (filePath === '.gitkeep' || filePath === 'cache')
-        continue
-      fs.rmSync(path.resolve(imageBasePath, filePath), { recursive: true, force: true })
-    }
-    for (const filePath of fs.readdirSync(path.resolve(deployedPath))) {
-      if (filePath === '.gitkeep')
-        continue
-      fs.rmSync(path.resolve(deployedPath, filePath), { recursive: true, force: true })
+    if (downloadTest) {
+      for (const filePath of fs.readdirSync(path.resolve(imageBasePath))) {
+        if (filePath === '.gitkeep' || filePath === 'cache')
+          continue
+        fs.rmSync(path.resolve(imageBasePath, filePath), { recursive: true, force: true })
+      }
+      for (const filePath of fs.readdirSync(path.resolve(deployedPath))) {
+        if (filePath === '.gitkeep')
+          continue
+        fs.rmSync(path.resolve(deployedPath, filePath), { recursive: true, force: true })
+      }
     }
     imageManager = await createImageManager({ imageBasePath, deployedPath, emulatorPath })
   })
@@ -31,7 +34,7 @@ describe.sequential('image manager', (it) => {
     await imageManager.writeDefaultProductConfig()
   })
 
-  it.sequential('should create image manager', async () => {
+  it.runIf(downloadTest)('should create image manager', async () => {
     const images = await imageManager.getImages()
     const image = images[0]
     const downloader = await image.createDownloader()
@@ -56,8 +59,10 @@ describe.sequential('image manager', (it) => {
       return console.error(image)
     const productConfig = await image.getProductConfig()
     const mateBookFold = productConfig.find(item => item.name === 'MateBook Fold')
+    if (!mateBookFold)
+      throw new Error('MateBook Fold not found')
     const uuid = crypto.randomUUID()
-    const deployer = image.createDeployer('MateBook Fold', createDeployedImageConfig(mateBookFold!))
+    const deployer = image.createDeployer('MateBook Fold', createDeployedImageConfig(mateBookFold))
       .setCpuNumber(4)
       .setMemoryRamSize(4096)
       .setDataDiskSize(6144)
@@ -115,8 +120,8 @@ describe.sequential('image manager', (it) => {
         "hw.lcd.density": "288",
         "hw.lcd.height": "2472",
         "hw.lcd.width": "3296",
-        "hw.phy.height": "18",
-        "hw.phy.width": "18",
+        "hw.phy.height": "1648",
+        "hw.phy.width": "2472",
         "hw.ramSize": "4096",
         "image.sysdir.1": "system-image/HarmonyOS-6.0.1/pc_all_arm/",
         "isCustomize": "false",
@@ -135,8 +140,8 @@ describe.sequential('image manager', (it) => {
       hw.lcd.height=2472
       hw.lcd.width=3296
       hw.cpu.ncore=4
-      hw.phy.height=18
-      hw.phy.width=18
+      hw.phy.height=1648
+      hw.phy.width=2472
       diagonalSize=18
       hw.ramSize=4096
       deviceType=2in1_foldable
@@ -167,11 +172,32 @@ describe.sequential('image manager', (it) => {
     await deployer.deploy()
     const child_process = await image.start(deployer)
 
-    return new Promise<void>(resolve => setTimeout(resolve, 1000 * 5))
+    return new Promise<void>(resolve => setTimeout(resolve, 1000 * 60))
       .then(() => {
         if (typeof child_process.exitCode === 'number')
           throw new Error(`Emulator quit in 5 seconds, exit code: ${child_process.exitCode}`)
       })
       .then(() => image.stop(deployer))
-  }, 1000 * 20)
+  }, 1000 * 100)
+})
+
+describe.skip('start', (it) => {
+  let imageManager: ImageManager
+
+  it.beforeAll(async () => {
+    imageManager = await createImageManager({ imageBasePath, deployedPath, emulatorPath })
+  })
+
+  it.sequential('should start image', async () => {
+    const image = await imageManager.getImages().then(images => images.find(image => image.imageType === 'local'))
+    if (!image)
+      return console.error('No local image found')
+    if (image instanceof RequestUrlError)
+      return console.error(image)
+    const productConfig = await image.getProductConfig()
+    const mateBookFold = productConfig.find(item => item.name === 'MateBook Fold')
+    if (!mateBookFold)
+      throw new Error('MateBook Fold not found')
+    await image.start(image.createDeployer('MateBook Fold', createDeployedImageConfig(mateBookFold)))
+  }, 1000 * 1000)
 })

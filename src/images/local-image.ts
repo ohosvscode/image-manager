@@ -1,5 +1,5 @@
 import type { ImageDeployer } from '../deployer/image-deployer'
-import type { DeployedImageConfig } from '../deployer/list'
+import type { DeployedImageConfigWithProductName } from '../deployer/list'
 import type { ProductConfigItem } from '../product-config'
 import type { DeviceType, Stringifiable } from '../types'
 import type { BaseImage } from './image'
@@ -8,7 +8,7 @@ import { ImageBase } from './image'
 
 export interface LocalImage extends BaseImage, Stringifiable<LocalImage.Stringifiable> {
   imageType: 'local'
-  createDeployer(name: string, config: DeployedImageConfig): ImageDeployer
+  createDeployer(name: string, config: DeployedImageConfigWithProductName): ImageDeployer
   getProductConfig(): Promise<ProductConfigItem[]>
   delete(): Promise<void | Error>
   buildStartCommand(deployer: ImageDeployer): Promise<string>
@@ -31,7 +31,7 @@ export namespace LocalImage {
 export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implements LocalImage {
   imageType = 'local' as const
 
-  createDeployer(name: string, config: DeployedImageConfig): ImageDeployer {
+  createDeployer(name: string, config: DeployedImageConfigWithProductName): ImageDeployer {
     return createImageDeployer(
       this,
       this.getImageManager().getOptions().crypto.randomUUID(),

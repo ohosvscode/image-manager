@@ -89,9 +89,9 @@ export async function resolveImageManagerOptions(options: ImageManagerOptions): 
   function resolveDefaultSdkPath(): string {
     switch (process.platform) {
       case 'darwin':
-        return path.resolve('Applications', 'DevEco-Studio.app', 'Contents', 'sdk', 'default', 'openharmony')
+        return '/Applications/DevEco-Studio.app/Contents/sdk/default/openharmony'
       case 'win32':
-        return path.resolve('C:', 'Program Files', 'Huawei', 'DevEco Studio', 'sdk', 'default', 'openharmony')
+        return 'C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony'
       default:
         return path.resolve(os.homedir(), '.huawei', 'Sdk', 'default', 'openharmony')
     }

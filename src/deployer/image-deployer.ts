@@ -1,5 +1,5 @@
 import type { LocalImage } from '../images'
-import type { DeployedImageConfig, DeployedImageOptions, FullDeployedImageOptions } from './list'
+import type { DeployedImageConfigWithProductName, DeployedImageOptions, FullDeployedImageOptions } from './list'
 
 export interface ImageDeployer {
   setUuid(uuid: `${string}-${string}-${string}-${string}-${string}`): this
@@ -27,7 +27,7 @@ export interface ImageDeployer {
    *
    * @returns The `config.ini` object of the current device.
    */
-  buildIni(): Promise<Record<string, string>>
+  buildIni(): Promise<Record<string, string | undefined>>
   /**
    * Build the `config.ini` string of the current device.
    *
@@ -54,7 +54,7 @@ class ImageDeployerImpl implements ImageDeployer {
     private readonly image: LocalImage,
     uuid: string,
     name: string,
-    readonly config: DeployedImageConfig,
+    private readonly config: DeployedImageConfigWithProductName,
   ) {
     this.options.uuid = uuid
     this.options.name = name
@@ -132,9 +132,6 @@ class ImageDeployerImpl implements ImageDeployer {
   }
 
   async buildList(): Promise<FullDeployedImageOptions> {
-    if (!this.options.name)
-      throw new Error('Name is required')
-
     return {
       ...this.options as DeployedImageOptions,
       'imageDir': this.image.getPath().split(',').join(this.image.getImageManager().getOptions().path.sep) + this.image.getImageManager().getOptions().path.sep,
@@ -155,17 +152,21 @@ class ImageDeployerImpl implements ImageDeployer {
     }
   }
 
-  async buildIni(): Promise<Record<string, string>> {
+  async buildIni(): Promise<Record<string, string | undefined>> {
     const config = await this.buildList()
+    const productConfig = await this.image.getProductConfig()
+    const productConfigItem = productConfig.find(item => item.name === this.config.productName)
+    if (!productConfigItem)
+      throw new Error(`Product config item ${this.config.productName} not found`)
 
     return {
       'name': config.name,
       'hw.lcd.density': config.density,
-      'hw.lcd.height': config.resolutionHeight,
-      'hw.lcd.width': config.resolutionWidth,
+      'hw.lcd.height': productConfigItem.screenHeight,
+      'hw.lcd.width': productConfigItem.screenWidth,
       'hw.cpu.ncore': config.cpuNumber,
-      'hw.phy.height': config.diagonalSize,
-      'hw.phy.width': config.diagonalSize,
+      'hw.phy.height': productConfigItem.outerScreenHeight,
+      'hw.phy.width': productConfigItem.outerScreenWidth,
       'diagonalSize': config.diagonalSize,
       'hw.ramSize': config.memoryRamSize,
       'deviceType': config.type,
@@ -220,8 +221,7 @@ class ImageDeployerImpl implements ImageDeployer {
   }
 
   async deploy(symlinkImage: boolean = true): Promise<void | Error> {
-    const { fs, path } = this.image.getImageManager().getOptions()
-    const imageBasePath = this.image.getImageManager().getOptions().imageBasePath
+    const { fs, path, imageBasePath, sdkPath } = this.image.getImageManager().getOptions()
     const config = await this.buildList()
     if (fs.existsSync(config.path))
       return new Error(`Image ${config.name} already deployed`)
@@ -232,6 +232,22 @@ class ImageDeployerImpl implements ImageDeployer {
 
     fs.mkdirSync(config.path, { recursive: true })
     fs.writeFileSync(path.join(config.path, 'config.ini'), await this.toIniString())
+
+    // 模拟器通过 harmonyos.sdk.path（即 imageBasePath）查找 default/openharmony，deploy 时确保存在
+    const symlinkSdkPath = path.resolve(imageBasePath, 'default', 'openharmony')
+    if (!fs.existsSync(path.dirname(symlinkSdkPath)))
+      fs.mkdirSync(path.dirname(symlinkSdkPath), { recursive: true })
+    try {
+      const stat = fs.lstatSync(symlinkSdkPath)
+      if (stat.isSymbolicLink())
+        fs.unlinkSync(symlinkSdkPath)
+      else
+        return undefined
+    }
+    catch {
+      // 路径不存在，继续创建
+    }
+    fs.symlinkSync(sdkPath, symlinkSdkPath, 'dir')
 
     const systemImageDir = path.join(imageBasePath, 'system-image')
     if (symlinkImage && fs.existsSync(systemImageDir)) {
@@ -252,7 +268,7 @@ export function createImageDeployer(
   image: LocalImage,
   uuid: string,
   name: string,
-  config: DeployedImageConfig,
+  config: DeployedImageConfigWithProductName,
 ): ImageDeployer {
   return new ImageDeployerImpl(image, uuid, name, config)
 }
