@@ -130,13 +130,13 @@ export async function resolveImageManagerOptions(options: ImageManagerOptions): 
     }
   }
 
-  const imageBasePath = options.imageBasePath ?? resolveDefaultImageBasePath()
-  const cachePath = options.cachePath ?? path.resolve(imageBasePath, 'cache')
-  const deployedPath = options.deployedPath ?? resolveDefaultDeployedPath()
-  const sdkPath = options.sdkPath ?? resolveDefaultSdkPath()
-  const configPath = options.configPath ?? resolveDefaultConfigPath()
-  const logPath = options.logPath ?? resolveDefaultLogPath()
-  const emulatorPath = options.emulatorPath ?? resolveDefaultEmulatorPath()
+  const imageBasePath = options.imageBasePath || resolveDefaultImageBasePath()
+  const cachePath = options.cachePath || path.resolve(imageBasePath, 'cache')
+  const deployedPath = options.deployedPath || resolveDefaultDeployedPath()
+  const sdkPath = options.sdkPath || resolveDefaultSdkPath()
+  const configPath = options.configPath || resolveDefaultConfigPath()
+  const logPath = options.logPath || resolveDefaultLogPath()
+  const emulatorPath = options.emulatorPath || resolveDefaultEmulatorPath()
 
   return {
     imageBasePath,
