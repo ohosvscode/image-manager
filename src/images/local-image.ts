@@ -40,8 +40,10 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
     )
   }
 
-  async getProductConfig(): Promise<ProductConfigItem[]> {
-    const productConfig = await this.getImageManager().getProductConfig()
+  async getProductConfig(usingDefaultProductConfig: boolean = false): Promise<ProductConfigItem[]> {
+    const productConfig = usingDefaultProductConfig
+      ? (await import('../default-product-config')).default
+      : await this.getImageManager().getProductConfig()
     const deviceType = this.getDeviceType().toLowerCase() as DeviceType
     if (!deviceType)
       return []

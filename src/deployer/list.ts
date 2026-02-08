@@ -1,3 +1,24 @@
+export enum DevModel {
+  MCHEMU_AL00CN = 'MCHEMU-AL00CN',
+  PHEMU_FD00 = 'PHEMU-FD00',
+  PHEMU_FD01 = 'PHEMU-FD01',
+  PHEMU_FD02 = 'PHEMU-FD02',
+  PHEMU_FD06 = 'PHEMU-FD06',
+  PCEMU_FD00 = 'PCEMU-FD00',
+  PCEMU_FD05 = 'PCEMU-FD05',
+}
+
+export type DeployedDevModel
+  = 'MCHEMU-AL00CN'
+    | 'PHEMU-FD00'
+    | 'PHEMU-FD01'
+    | 'PHEMU-FD02'
+    | 'PHEMU-FD06'
+    | 'PCEMU-FD00'
+    | 'PCEMU-FD05'
+    | DevModel
+    | (string & {})
+
 export interface DeployedImageConfig {
   /**
    * Diagonal size.
@@ -76,7 +97,7 @@ export interface DeployedImageOptions extends DeployedImageConfig {
    *
    * @example 'MCHEMU-AL00CN'
    */
-  'devModel': 'MCHEMU-AL00CN' | 'PHEMU-FD00' | 'PCEMU-FD00' | 'PCEMU-FD05' | (string & {})
+  'devModel'?: DeployedDevModel
   /**
    * Model.
    *

@@ -9,6 +9,7 @@ export default {
       screenDiagonal: '6.9',
       screenDensity: '540',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Mate 80、Mate 80 Pro',
@@ -17,6 +18,7 @@ export default {
       screenDiagonal: '6.75',
       screenDensity: '560',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Mate 70 Pro、Mate 70 Pro+、Mate 70 RS',
@@ -25,6 +27,7 @@ export default {
       screenDiagonal: '6.9',
       screenDensity: '560',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Mate 70',
@@ -33,6 +36,7 @@ export default {
       screenDiagonal: '6.7',
       screenDensity: '520',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Mate 70 Air',
@@ -41,6 +45,7 @@ export default {
       screenDiagonal: '6.96',
       screenDensity: '520',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Mate 60 Pro、Mate 60 Pro+、Mate 60 RS',
@@ -49,6 +54,7 @@ export default {
       screenDiagonal: '6.82',
       screenDensity: '520',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Mate 60',
@@ -57,6 +63,7 @@ export default {
       screenDiagonal: '6.69',
       screenDensity: '520',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Pura 80 Pro、Pura 80 Pro+、Pura 80 Ultra',
@@ -65,6 +72,7 @@ export default {
       screenDiagonal: '6.8',
       screenDensity: '560',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Pura 80',
@@ -73,6 +81,7 @@ export default {
       screenDiagonal: '6.6',
       screenDensity: '560',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Pura 70 Pro、Pura 70 Pro+、Pura 70 Ultra',
@@ -81,6 +90,7 @@ export default {
       screenDiagonal: '6.8',
       screenDensity: '540',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Pura 70',
@@ -89,6 +99,7 @@ export default {
       screenDiagonal: '6.6',
       screenDensity: '540',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'nova 14 Ultra',
@@ -97,6 +108,7 @@ export default {
       screenDiagonal: '6.81',
       screenDensity: '560',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'nova 14 Pro',
@@ -113,6 +125,7 @@ export default {
       screenDiagonal: '6.7',
       screenDensity: '480',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'nova 13 Pro',
@@ -121,6 +134,7 @@ export default {
       screenDiagonal: '6.76',
       screenDensity: '540',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'nova 13',
@@ -129,6 +143,7 @@ export default {
       screenDiagonal: '6.7',
       screenDensity: '480',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'nova 12 Pro、nova 12 Ultra',
@@ -137,6 +152,7 @@ export default {
       screenDiagonal: '6.76',
       screenDensity: '540',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'nova 12',
@@ -145,6 +161,7 @@ export default {
       screenDiagonal: '6.7',
       screenDensity: '480',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Pocket 2',
@@ -153,6 +170,7 @@ export default {
       screenDiagonal: '6.94',
       screenDensity: '500',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'nova flip、nova flip S',
@@ -161,6 +179,7 @@ export default {
       screenDiagonal: '6.94',
       screenDensity: '500',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Customize',
@@ -169,6 +188,7 @@ export default {
       screenDiagonal: '6.9',
       screenDensity: '560',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
   ],
   'Tablet': [
@@ -229,6 +249,7 @@ export default {
       screenDiagonal: '14.2',
       screenDensity: '304',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Customize',
@@ -237,6 +258,7 @@ export default {
       screenDiagonal: '14.2',
       screenDensity: '304',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
   ],
   'Foldable': [
@@ -250,6 +272,7 @@ export default {
       outerScreenHeight: '2504',
       outerScreenDiagonal: '6.4',
       visible: true,
+      devModel: 'PHEMU-FD01',
     },
     {
       name: 'Mate X6',
@@ -261,6 +284,7 @@ export default {
       outerScreenHeight: '2440',
       outerScreenDiagonal: '6.45',
       visible: true,
+      devModel: 'PHEMU-FD01',
     },
     {
       name: 'Mate X7',
@@ -272,6 +296,7 @@ export default {
       outerScreenHeight: '2444',
       outerScreenDiagonal: '6.49',
       visible: true,
+      devModel: 'PHEMU-FD01',
     },
     {
       name: 'Customize',
@@ -283,6 +308,7 @@ export default {
       outerScreenHeight: '2504',
       outerScreenDiagonal: '6.4',
       visible: true,
+      devModel: 'PHEMU-FD01',
     },
   ],
   'WideFold': [
@@ -296,6 +322,7 @@ export default {
       outerScreenHeight: '980',
       outerScreenDiagonal: '3.5',
       visible: false,
+      devModel: 'PHEMU-FD02',
     },
   ],
   'TripleFold': [
@@ -312,6 +339,7 @@ export default {
       outerDoubleScreenHeight: '2232',
       outerDoubleScreenDiagonal: '10.2',
       visible: false,
+      devModel: 'PHEMU-FD06',
     },
   ],
   '2in1 Foldable': [
@@ -346,6 +374,7 @@ export default {
       screenDiagonal: '1.6',
       screenDensity: '320',
       visible: false,
+      devModel: 'MCHEMU-AL00CN',
     },
   ],
 } satisfies ProductConfig as ProductConfig

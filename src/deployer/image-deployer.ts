@@ -1,5 +1,6 @@
 import type { LocalImage } from '../images'
-import type { DeployedImageConfigWithProductName, DeployedImageOptions, FullDeployedImageOptions } from './list'
+import type { LocalImageImpl } from '../images/local-image'
+import type { DeployedDevModel, DeployedImageConfigWithProductName, DeployedImageOptions, FullDeployedImageOptions } from './list'
 
 export interface ImageDeployer {
   setUuid(uuid: `${string}-${string}-${string}-${string}-${string}`): this
@@ -51,7 +52,7 @@ class ImageDeployerImpl implements ImageDeployer {
   private hwHdcPort: string | number = 'notset'
 
   constructor(
-    private readonly image: LocalImage,
+    private readonly image: LocalImageImpl,
     uuid: string,
     name: string,
     private readonly config: DeployedImageConfigWithProductName,
@@ -131,9 +132,29 @@ class ImageDeployerImpl implements ImageDeployer {
     return this
   }
 
+  private async getDevModel(): Promise<DeployedDevModel | undefined> {
+    if (this.options.devModel)
+      return this.options.devModel
+    const productConfig = await this.image.getProductConfig()
+    const productConfigItem = productConfig.find(item => item.name === this.config.productName)
+    if (!productConfigItem)
+      throw new Error(`Product config item ${this.config.productName} not found`)
+    if (productConfigItem.devModel)
+      return productConfigItem.devModel
+
+    const defaultProductConfig = await this.image.getProductConfig(true)
+    const defaultProductConfigItem = defaultProductConfig.find(item => item.name === this.config.productName)
+    if (!defaultProductConfigItem)
+      throw new Error(`Default product config item ${this.config.productName} not found`)
+    if (defaultProductConfigItem.devModel)
+      return defaultProductConfigItem.devModel
+  }
+
   async buildList(): Promise<FullDeployedImageOptions> {
     const productConfig = await this.image.getProductConfig()
     const productConfigItem = productConfig.find(item => item.name === this.config.productName)
+    if (!productConfigItem)
+      throw new Error(`Product config item ${this.config.productName} not found`)
 
     return {
       ...this.options as DeployedImageOptions,
@@ -152,7 +173,7 @@ class ImageDeployerImpl implements ImageDeployer {
       'harmonyos.config.path': this.image.getImageManager().getOptions().configPath,
       'harmonyos.log.path': this.image.getImageManager().getOptions().logPath,
       'type': this.image.getSnakecaseDeviceType(),
-      'devModel': this.options.devModel ?? productConfigItem?.devModel ?? 'PCEMU-FD05',
+      'devModel': await this.getDevModel(),
     }
   }
 
@@ -277,5 +298,5 @@ export function createImageDeployer(
   name: string,
   config: DeployedImageConfigWithProductName,
 ): ImageDeployer {
-  return new ImageDeployerImpl(image, uuid, name, config)
+  return new ImageDeployerImpl(image as LocalImageImpl, uuid, name, config)
 }
