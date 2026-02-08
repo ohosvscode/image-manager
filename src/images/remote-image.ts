@@ -7,11 +7,8 @@ export interface RemoteImage extends BaseImage, Stringifiable<RemoteImage.String
 }
 
 export namespace RemoteImage {
-  export interface Stringifiable {
+  export interface Stringifiable extends Omit<BaseImage.Stringifiable, 'imageType'> {
     imageType: 'remote'
-    path: string
-    apiVersion: string
-    checksum: string
   }
 }
 
@@ -19,11 +16,6 @@ export class RemoteImageImpl extends ImageBase<RemoteImage.Stringifiable> implem
   imageType = 'remote' as const
 
   toJSON(): RemoteImage.Stringifiable {
-    return {
-      imageType: this.imageType,
-      path: this.getPath(),
-      apiVersion: this.getApiVersion(),
-      checksum: this.getChecksum(),
-    }
+    return super.toJSON()
   }
 }

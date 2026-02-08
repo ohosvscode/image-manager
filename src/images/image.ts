@@ -24,12 +24,27 @@ export interface BaseImage {
   createDownloader(signal?: AbortSignal): Promise<ImageDownloader<this> | RequestUrlError>
 }
 
+export namespace BaseImage {
+  export interface Stringifiable {
+    imageType: ImageType
+    arch: 'arm' | 'x86' | (string & {})
+    path: string
+    checksum: string
+    fsPath: string
+    version: string
+    apiVersion: string
+    targetOS: string
+    targetVersion: string
+    deviceType: DeviceType | (string & {})
+    snakecaseDeviceType: SnakecaseDeviceType | (string & {})
+  }
+}
+
 export type Image = LocalImage | RemoteImage
 export type ImageType = 'local' | 'remote'
 
-export abstract class ImageBase<T> implements BaseImage, Stringifiable<T> {
+export abstract class ImageBase<T extends BaseImage.Stringifiable> implements BaseImage, Stringifiable<T> {
   abstract imageType: ImageType
-  abstract toJSON(): T
 
   constructor(
     private readonly response: any,
@@ -124,5 +139,21 @@ export abstract class ImageBase<T> implements BaseImage, Stringifiable<T> {
     catch (error) {
       return new RequestUrlError(error.message, error.code, error)
     }
+  }
+
+  toJSON(): T {
+    return {
+      imageType: this.imageType,
+      arch: this.getArch(),
+      path: this.getPath(),
+      checksum: this.getChecksum(),
+      fsPath: this.getFsPath(),
+      version: this.getVersion(),
+      apiVersion: this.getApiVersion(),
+      targetOS: this.getTargetOS(),
+      targetVersion: this.getTargetVersion(),
+      deviceType: this.getDeviceType(),
+      snakecaseDeviceType: this.getSnakecaseDeviceType(),
+    } as T
   }
 }

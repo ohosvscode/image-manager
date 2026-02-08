@@ -18,13 +18,9 @@ export interface LocalImage extends BaseImage, Stringifiable<LocalImage.Stringif
 }
 
 export namespace LocalImage {
-  export interface Stringifiable {
+  export interface Stringifiable extends Omit<BaseImage.Stringifiable, 'imageType'> {
     imageType: 'local'
-    path: string
-    version: string
-    apiVersion: string
-    targetVersion: string
-    checksum: string
+    executablePath: string
   }
 }
 
@@ -105,12 +101,8 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
 
   toJSON(): LocalImage.Stringifiable {
     return {
-      imageType: this.imageType,
-      path: this.getPath(),
-      version: this.getVersion(),
-      apiVersion: this.getApiVersion(),
-      targetVersion: this.getTargetVersion(),
-      checksum: this.getChecksum(),
+      ...super.toJSON(),
+      executablePath: this.getExecutablePath(),
     }
   }
 }
