@@ -27,7 +27,8 @@
   "types": "dist/index.d.cts",
   "scripts": {
     "build": "tsdown --dts --format esm,cjs src/index.ts src/default-product-config.ts",
-    "test": "vitest --coverage --ui"
+    "test": "vitest --coverage --ui",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@types/progress-stream": "^2.0.5",
