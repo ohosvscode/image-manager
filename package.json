@@ -20,6 +20,9 @@
     "qemu",
     "arkts"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": {
