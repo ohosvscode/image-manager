@@ -4,6 +4,8 @@
   "version": "0.0.1",
   "description": "OpenHarmony/HarmonyOS qemu image manager.",
   "author": "Naily Zero <zero@naily.cc> (https://naily.cc)",
+  "license": "MIT",
+  "homepage": "https://github.com/ohosvscode/image-manager",
   "repository": {
     "type": "git",
     "url": "https://github.com/ohosvscode/image-manager"
@@ -12,6 +14,12 @@
     "url": "https://github.com/ohosvscode/image-manager/issues",
     "email": "zero@naily.cc"
   },
+  "keywords": [
+    "openharmony",
+    "harmonyos",
+    "qemu",
+    "arkts"
+  ],
   "exports": {
     ".": {
       "types": {
@@ -25,6 +33,9 @@
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.cts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown --dts --format esm,cjs src/index.ts src/default-product-config.ts",
     "test": "vitest --coverage --ui",
