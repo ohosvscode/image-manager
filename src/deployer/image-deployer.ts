@@ -2,7 +2,7 @@ import type { LocalImage } from '../images'
 import type { DeployedImageConfig, DeployedImageOptions, FullDeployedImageOptions } from './list'
 
 export interface ImageDeployer {
-  setUuid(uuid: string): this
+  setUuid(uuid: `${string}-${string}-${string}-${string}-${string}`): this
   setModel(model: string): this
   setDevModel(devModel: FullDeployedImageOptions['devModel']): this
   setCpuNumber(cpuNumber: number): this
@@ -16,10 +16,30 @@ export interface ImageDeployer {
   setIsPublic(isPublic: boolean): this
   setVendorCountry(vendorCountry: string): this
   setHwHdcPort(hwHdcPort: string | number): this
+  /**
+   * Build the list object of the current device.
+   *
+   * @returns The list object of the current device. Can be used to build the `lists.json` file.
+   */
   buildList(): Promise<FullDeployedImageOptions>
+  /**
+   * Build the `config.ini` object of the current device.
+   *
+   * @returns The `config.ini` object of the current device.
+   */
   buildIni(): Promise<Record<string, string>>
+  /**
+   * Build the `config.ini` string of the current device.
+   *
+   * @returns The `config.ini` string of the current device, can write to file directly.
+   */
   toIniString(): Promise<string>
-  deploy(): Promise<void | Error>
+  /**
+   * Deploy the image.
+   *
+   * @param symlinkImage - If true, symlink the system image to current device directory. Default is `true`.
+   */
+  deploy(symlinkImage?: boolean): Promise<void | Error>
 }
 
 class ImageDeployerImpl implements ImageDeployer {
@@ -199,7 +219,7 @@ class ImageDeployerImpl implements ImageDeployer {
     }
   }
 
-  async deploy(): Promise<void | Error> {
+  async deploy(symlinkImage: boolean = true): Promise<void | Error> {
     const { fs, path } = this.image.getImageManager().getOptions()
     const imageBasePath = this.image.getImageManager().getOptions().imageBasePath
     const config = await this.buildList()
@@ -214,7 +234,7 @@ class ImageDeployerImpl implements ImageDeployer {
     fs.writeFileSync(path.join(config.path, 'config.ini'), await this.toIniString())
 
     const systemImageDir = path.join(imageBasePath, 'system-image')
-    if (fs.existsSync(systemImageDir)) {
+    if (symlinkImage && fs.existsSync(systemImageDir)) {
       const linkPath = path.join(config.path, 'system-image')
       try {
         const target = path.relative(config.path, systemImageDir)
@@ -224,7 +244,6 @@ class ImageDeployerImpl implements ImageDeployer {
         return err instanceof Error ? err : new Error(String(err))
       }
     }
-
     return undefined
   }
 }

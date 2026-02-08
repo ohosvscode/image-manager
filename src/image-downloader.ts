@@ -33,11 +33,36 @@ export type ImageDownloadEventMap = {
 }
 
 export interface ImageDownloader<T extends BaseImage> extends Emitter<ImageDownloadEventMap> {
+  /**
+   * Start downloading the image.
+   *
+   * @param signal - The abort signal.
+   */
   startDownload(signal?: AbortSignal): Promise<void>
+  /**
+   * Check the checksum of the image.
+   *
+   * @param signal - The abort signal.
+   */
   checkChecksum(signal?: AbortSignal): Promise<boolean>
-  extract(signal?: AbortSignal): Promise<void>
+  /**
+   * Extract the image.
+   *
+   * @param signal - The abort signal.
+   * @param symlinkOpenHarmonySdk - If true, symlink the OpenHarmony SDK to the image. Default is `true`.
+   */
+  extract(signal?: AbortSignal, symlinkOpenHarmonySdk?: boolean): Promise<void>
+  /**
+   * Clean the cache of the image.
+   */
   clean(): Promise<void>
+  /**
+   * Get the image.
+   */
   getImage(): T
+  /**
+   * Get the URL of the image.
+   */
   getUrl(): string
 }
 
@@ -77,16 +102,50 @@ class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements
 
   async startDownload(signal?: AbortSignal): Promise<void> {
     const { fs, cachePath } = this.image.getImageManager().getOptions()
-    const transformProgress = this.createProgressTransformer()
+    const cacheFsPath = this.getCacheFsPath()
+    if (!fs.existsSync(cachePath))
+      fs.mkdirSync(cachePath, { recursive: true })
+    const startByte = fs.existsSync(cacheFsPath) ? fs.statSync(cacheFsPath).size : 0
+    const transformProgress = this.createProgressTransformer(startByte)
     const response = await axios.get<Stream.Readable>(this.url, {
+      headers: startByte > 0 ? { Range: `bytes=${startByte}-` } : {},
       responseType: 'stream',
+      validateStatus: status => (status === 200 || status === 206),
       onDownloadProgress: progress => this.emit('download-progress', transformProgress(progress)),
       signal,
     })
-    if (!fs.existsSync(cachePath))
-      fs.mkdirSync(cachePath, { recursive: true })
-    response.data.pipe(fs.createWriteStream(this.getCacheFsPath()))
-    await new Promise<void>((resolve, reject) => response.data.on('end', resolve).on('error', reject))
+    const isPartialContent = response.status === 206
+    const writeStart = (startByte > 0 && isPartialContent) ? startByte : 0
+    const writeFlags = writeStart > 0 ? 'a' : 'w'
+    if (startByte > 0 && !isPartialContent) {
+      fs.rmSync(cacheFsPath, { force: true })
+    }
+    const writeStream = fs.createWriteStream(cacheFsPath, {
+      flags: writeFlags,
+      start: writeStart,
+    })
+    response.data.pipe(writeStream)
+    await new Promise<void>((resolve, reject) => {
+      let settled = false
+      const onError = (err: Error) => {
+        if (settled)
+          return
+        settled = true
+        response.data.destroy()
+        writeStream.destroy()
+        reject(err)
+      }
+      const onFinish = () => {
+        if (settled)
+          return
+        settled = true
+        resolve()
+      }
+      response.data.on('error', onError)
+      writeStream.on('error', onError)
+      response.data.on('end', () => writeStream.end())
+      writeStream.on('finish', onFinish)
+    })
   }
 
   async checkChecksum(signal?: AbortSignal): Promise<boolean> {
@@ -100,8 +159,8 @@ class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements
     return calculatedChecksum === checksum
   }
 
-  async extract(signal?: AbortSignal): Promise<void> {
-    const { fs } = this.image.getImageManager().getOptions()
+  async extract(signal?: AbortSignal, symlinkOpenHarmonySdk: boolean = true): Promise<void> {
+    const { fs, path, imageBasePath, sdkPath } = this.image.getImageManager().getOptions()
     const cacheFsPath = this.getCacheFsPath()
     const stream = fs.createReadStream(cacheFsPath, { signal })
     const progressStream = progress({ length: fs.statSync(cacheFsPath).size })
@@ -109,6 +168,13 @@ class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements
     progressStream.on('progress', progress => this.emitter.emit('extract-progress', progress))
     stream.pipe(progressStream).pipe(extractStream)
     await extractStream.promise()
+    if (symlinkOpenHarmonySdk) {
+      const symlinkSdkPath = path.resolve(imageBasePath, 'default', 'openharmony')
+      if (!fs.existsSync(path.dirname(symlinkSdkPath)))
+        fs.mkdirSync(path.dirname(symlinkSdkPath), { recursive: true })
+      if (!fs.existsSync(symlinkSdkPath))
+        fs.symlinkSync(sdkPath, symlinkSdkPath)
+    }
   }
 
   async clean(): Promise<void> {
@@ -118,14 +184,16 @@ class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements
       fs.rmSync(cacheFsPath, { recursive: true })
   }
 
-  private createProgressTransformer(): (progress: AxiosProgressEvent) => ImageDownloadProgressEvent {
+  private createProgressTransformer(startByte: number): (progress: AxiosProgressEvent) => ImageDownloadProgressEvent {
     let previousPercentage = 0
     const bytesPerKB = 1024
     const bytesPerMB = bytesPerKB * 1024
 
     return (progress) => {
-      const total = progress.total ?? 0
-      const loaded = progress.loaded ?? 0
+      const rangeTotal = progress.total ?? 0
+      const rangeLoaded = progress.loaded ?? 0
+      const total = startByte + rangeTotal
+      const loaded = startByte + rangeLoaded
       const percentage = total > 0 ? (loaded / total) * 100 : 0
       const increment = Math.max(0, percentage - previousPercentage)
       previousPercentage = percentage
@@ -136,6 +204,8 @@ class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements
 
       return {
         ...progress,
+        total,
+        loaded,
         network,
         unit,
         increment,

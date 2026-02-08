@@ -1,4 +1,5 @@
 import type { ImageManager } from '../src'
+import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect } from 'vitest'
 import { createImageManager, RequestUrlError } from '../src'
@@ -13,6 +14,16 @@ describe.sequential('image manager', (it) => {
   let imageManager: ImageManager
 
   it.beforeAll(async () => {
+    for (const filePath of fs.readdirSync(path.resolve(imageBasePath))) {
+      if (filePath === '.gitkeep' || filePath === 'cache')
+        continue
+      fs.rmSync(path.resolve(imageBasePath, filePath), { recursive: true, force: true })
+    }
+    for (const filePath of fs.readdirSync(path.resolve(deployedPath))) {
+      if (filePath === '.gitkeep')
+        continue
+      fs.rmSync(path.resolve(deployedPath, filePath), { recursive: true, force: true })
+    }
     imageManager = await createImageManager({ imageBasePath, deployedPath, emulatorPath })
   })
 
@@ -20,7 +31,7 @@ describe.sequential('image manager', (it) => {
     await imageManager.writeDefaultProductConfig()
   })
 
-  it.skip('should create image manager', async () => {
+  it.sequential('should create image manager', async () => {
     const images = await imageManager.getImages()
     const image = images[0]
     const downloader = await image.createDownloader()

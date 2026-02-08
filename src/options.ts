@@ -16,9 +16,9 @@ export interface ImageManagerOptions {
   /**
    * The path to store the HarmonyOS SDK.
    *
-   * - In macOS, it will be `/Applications/DevEco-Studio.app/Contents/sdk` by default;
-   * - In Windows, it will be `C:\Program Files\Huawei\DevEco Studio\sdk` by default;
-   * - In other platforms, it will be `~/.huawei/Sdk` by default.
+   * - In macOS, it will be `/Applications/DevEco-Studio.app/Contents/sdk/default/openharmony` by default;
+   * - In Windows, it will be `C:\Program Files\Huawei\DevEco Studio\sdk\default\openharmony` by default;
+   * - In other platforms, it will be `~/.huawei/Sdk/default/openharmony` by default.
    */
   sdkPath?: string
   /**
@@ -89,11 +89,11 @@ export async function resolveImageManagerOptions(options: ImageManagerOptions): 
   function resolveDefaultSdkPath(): string {
     switch (process.platform) {
       case 'darwin':
-        return '/Applications/DevEco-Studio.app/Contents/sdk'
+        return path.resolve('Applications', 'DevEco-Studio.app', 'Contents', 'sdk', 'default', 'openharmony')
       case 'win32':
-        return path.resolve('C:', 'Program Files', 'Huawei', 'DevEco Studio', 'sdk')
+        return path.resolve('C:', 'Program Files', 'Huawei', 'DevEco Studio', 'sdk', 'default', 'openharmony')
       default:
-        return path.resolve(os.homedir(), '.huawei', 'Sdk')
+        return path.resolve(os.homedir(), '.huawei', 'Sdk', 'default', 'openharmony')
     }
   }
 
