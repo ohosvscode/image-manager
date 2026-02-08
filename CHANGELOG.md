@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.1.0
+
+### Minor Changes
+
+- 31c3841: feat: update toJSON method
+
 ## 0.0.4
 
 ### Patch Changes
