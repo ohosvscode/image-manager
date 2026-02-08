@@ -1,5 +1,12 @@
 # @arkts/image-manager
 
+## 0.1.1
+
+### Patch Changes
+
+- 9015696: fix: ?? -> ||
+- 79fe31f: fix: fix default path in Windows
+
 ## 0.1.0
 
 ### Minor Changes
