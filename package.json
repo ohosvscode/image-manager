@@ -3,6 +3,15 @@
   "type": "module",
   "version": "0.0.1",
   "description": "OpenHarmony/HarmonyOS qemu image manager.",
+  "author": "Naily Zero <zero@naily.cc> (https://naily.cc)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ohosvscode/image-manager"
+  },
+  "bugs": {
+    "url": "https://github.com/ohosvscode/image-manager/issues",
+    "email": "zero@naily.cc"
+  },
   "exports": {
     ".": {
       "types": {
