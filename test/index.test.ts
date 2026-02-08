@@ -66,7 +66,6 @@ describe.sequential('image manager', (it) => {
       .setCpuNumber(4)
       .setMemoryRamSize(4096)
       .setDataDiskSize(6144)
-      .setDevModel('PHEMU-FD00')
       .setUuid(uuid)
 
     expect(await deployer.buildList()).toMatchInlineSnapshot(`
@@ -76,7 +75,7 @@ describe.sequential('image manager', (it) => {
         "cpuNumber": "4",
         "dataDiskSize": "6144",
         "density": "288",
-        "devModel": "PHEMU-FD00",
+        "devModel": "PCEMU-FD05",
         "diagonalSize": "18",
         "harmonyOSVersion": "HarmonyOS-6.0.1",
         "harmonyos.config.path": "${imageManager.getOptions().configPath}",
@@ -99,7 +98,8 @@ describe.sequential('image manager', (it) => {
 
     expect(await deployer.buildIni()).toMatchInlineSnapshot(`
       {
-        "devModel": "PHEMU-FD00",
+        "coverDiagonalSize": "13",
+        "devModel": "PCEMU-FD05",
         "deviceType": "2in1_foldable",
         "diagonalSize": "18",
         "disk.dataPartition.size": "6144M",
@@ -114,6 +114,8 @@ describe.sequential('image manager', (it) => {
         "hmVersion": "6.0.0.112",
         "hvd.path": "${path.resolve(projectRootPath, 'test', 'fixtures', 'deployed', 'MateBook Fold')}",
         "hw.apiName": "6.0.1",
+        "hw.cover.height": "1648",
+        "hw.cover.width": "2472",
         "hw.cpu.arch": "arm",
         "hw.cpu.ncore": "4",
         "hw.hdc.port": "notset",
@@ -142,6 +144,9 @@ describe.sequential('image manager', (it) => {
       hw.cpu.ncore=4
       hw.phy.height=1648
       hw.phy.width=2472
+      hw.cover.height=1648
+      hw.cover.width=2472
+      coverDiagonalSize=13
       diagonalSize=18
       hw.ramSize=4096
       deviceType=2in1_foldable
@@ -160,7 +165,7 @@ describe.sequential('image manager', (it) => {
       harmonyos.config.path=${imageManager.getOptions().configPath}
       harmonyos.log.path=${imageManager.getOptions().logPath}
       guest.version=6.0.0.112
-      devModel=PHEMU-FD00
+      devModel=PCEMU-FD05
       isDefault=true
       isCustomize=false
       isPublic=true
@@ -191,9 +196,7 @@ describe.skip('start', (it) => {
   it.sequential('should start image', async () => {
     const image = await imageManager.getImages().then(images => images.find(image => image.imageType === 'local'))
     if (!image)
-      return console.error('No local image found')
-    if (image instanceof RequestUrlError)
-      return console.error(image)
+      throw new Error('No local image found')
     const productConfig = await image.getProductConfig()
     const mateBookFold = productConfig.find(item => item.name === 'MateBook Fold')
     if (!mateBookFold)

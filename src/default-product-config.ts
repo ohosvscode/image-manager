@@ -325,6 +325,7 @@ export default {
       outerScreenHeight: '1648',
       outerScreenDiagonal: '13',
       visible: false,
+      devModel: 'PCEMU-FD05',
     },
   ],
   'TV': [

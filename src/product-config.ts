@@ -50,6 +50,10 @@ export interface ProductConfigItem {
    * Whether the product is visible.
    */
   visible: boolean
+  /**
+   * The dev model of the product.
+   */
+  devModel?: string
 }
 
 export type ProductConfig = Record<PascalCaseDeviceType, ProductConfigItem[]>

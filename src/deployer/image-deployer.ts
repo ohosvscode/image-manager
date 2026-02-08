@@ -132,6 +132,9 @@ class ImageDeployerImpl implements ImageDeployer {
   }
 
   async buildList(): Promise<FullDeployedImageOptions> {
+    const productConfig = await this.image.getProductConfig()
+    const productConfigItem = productConfig.find(item => item.name === this.config.productName)
+
     return {
       ...this.options as DeployedImageOptions,
       'imageDir': this.image.getPath().split(',').join(this.image.getImageManager().getOptions().path.sep) + this.image.getImageManager().getOptions().path.sep,
@@ -149,6 +152,7 @@ class ImageDeployerImpl implements ImageDeployer {
       'harmonyos.config.path': this.image.getImageManager().getOptions().configPath,
       'harmonyos.log.path': this.image.getImageManager().getOptions().logPath,
       'type': this.image.getSnakecaseDeviceType(),
+      'devModel': this.options.devModel ?? productConfigItem?.devModel ?? 'PCEMU-FD05',
     }
   }
 
@@ -167,6 +171,9 @@ class ImageDeployerImpl implements ImageDeployer {
       'hw.cpu.ncore': config.cpuNumber,
       'hw.phy.height': productConfigItem.outerScreenHeight,
       'hw.phy.width': productConfigItem.outerScreenWidth,
+      'hw.cover.height': productConfigItem.outerScreenHeight,
+      'hw.cover.width': productConfigItem.outerScreenWidth,
+      'coverDiagonalSize': config.coverDiagonalSize ?? productConfigItem.outerScreenDiagonal,
       'diagonalSize': config.diagonalSize,
       'hw.ramSize': config.memoryRamSize,
       'deviceType': config.type,
