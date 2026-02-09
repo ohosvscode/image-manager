@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.1.2
+
+### Patch Changes
+
+- bd86658: refactor: deployer to device
+
 ## 0.1.1
 
 ### Patch Changes
