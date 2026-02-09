@@ -165,11 +165,6 @@ class ImageDeployerImpl implements Device {
   }
 
   async buildList(): Promise<FullDeployedImageOptions> {
-    const productConfig = await this.image.getProductConfig()
-    const productConfigItem = productConfig.find(item => item.name === this.config.productName)
-    if (!productConfigItem)
-      throw new Error(`Product config item ${this.config.productName} not found`)
-
     return {
       ...this.options as DeployedImageOptions,
       'imageDir': this.image.getPath().split(',').join(this.image.getImageManager().getOptions().path.sep) + this.image.getImageManager().getOptions().path.sep,
