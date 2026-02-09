@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.1.3
+
+### Patch Changes
+
+- f487637: fix: fix buildList function
+
 ## 0.1.2
 
 ### Patch Changes
