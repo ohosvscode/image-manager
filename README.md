@@ -49,33 +49,33 @@ async function main() {
     throw new Error('MateBook Fold not found')
 
   // Create the deployer
-  const deployer = image.createDeployer('MateBook Fold', createDeployedImageConfig(image))
+  const device = image.createDevice('MateBook Fold', createDeployedImageConfig(image))
     .setCpuNumber(4)
     .setMemoryRamSize(4096)
     .setDataDiskSize(6144)
 
   // We can get the final deployed image options,
   // it will be written to the `imageBasePath/lists.json` file when deployed.
-  const list = await deployer.buildList()
+  const list = await device.buildList()
   console.warn(list)
 
   // We can get the `config.ini` object,
   // it will be written to the `deployedPath/MateBook Fold/config.ini` file when deployed.
-  const config = await deployer.buildIni()
+  const config = await device.buildIni()
   console.warn(config)
   // You also can get the `config.ini` string version:
-  const iniString = await deployer.toIniString()
+  const iniString = await device.toIniString()
   console.warn(iniString)
 
-  // Deploy the image
-  await deployer.deploy()
+  // Deploy the device
+  await device.deploy()
   console.warn('Image deployed successfully')
 
   // Start the emulator
-  await image.start(deployer)
+  await image.start(device)
 
   await new Promise<void>(resolve => setTimeout(resolve, 1000 * 60))
   // Stop the emulator
-  image.stop(deployer)
+  image.stop(device)
 }
 ```

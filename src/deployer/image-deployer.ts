@@ -1,8 +1,8 @@
 import type { LocalImage } from '../images'
 import type { LocalImageImpl } from '../images/local-image'
-import type { DeployedDevModel, DeployedImageConfigWithProductName, DeployedImageOptions, FullDeployedImageOptions } from './list'
+import type { DeployedDevModel, DeployedImageOptions, FullDeployedImageOptions, ProductNameable } from './list'
 
-export interface ImageDeployer {
+export interface Device {
   setUuid(uuid: `${string}-${string}-${string}-${string}-${string}`): this
   setModel(model: string): this
   setDevModel(devModel: FullDeployedImageOptions['devModel']): this
@@ -36,14 +36,26 @@ export interface ImageDeployer {
    */
   toIniString(): Promise<string>
   /**
-   * Deploy the image.
+   * Deploy the device.
    *
    * @param symlinkImage - If true, symlink the system image to current device directory. Default is `true`.
    */
   deploy(symlinkImage?: boolean): Promise<void | Error>
+  /**
+   * Check if the device is deployed.
+   *
+   * @returns True if the device is deployed, false otherwise.
+   */
+  isDeployed(): Promise<boolean>
+  /**
+   * Delete the device.
+   *
+   * @returns True if the device is deleted, false otherwise.
+   */
+  delete(): Promise<void | Error>
 }
 
-class ImageDeployerImpl implements ImageDeployer {
+class ImageDeployerImpl implements Device {
   private readonly options: Partial<FullDeployedImageOptions> = {}
   private isDefault = true
   private isCustomize = false
@@ -55,11 +67,13 @@ class ImageDeployerImpl implements ImageDeployer {
     private readonly image: LocalImageImpl,
     uuid: string,
     name: string,
-    private readonly config: DeployedImageConfigWithProductName,
+    private readonly config: ProductNameable<FullDeployedImageOptions>,
   ) {
     this.options.uuid = uuid
     this.options.name = name
     Object.assign(this.options, config)
+    if ('productName' in this.options)
+      delete this.options.productName
   }
 
   setUuid(uuid: string): this {
@@ -290,13 +304,37 @@ class ImageDeployerImpl implements ImageDeployer {
     }
     return undefined
   }
+
+  async isDeployed(): Promise<boolean> {
+    const { fs, path } = this.image.getImageManager().getOptions()
+    const listsPath = path.resolve(this.image.getImageManager().getOptions().deployedPath, 'lists.json')
+    if (!fs.existsSync(listsPath) || !fs.statSync(listsPath).isFile())
+      return false
+    const lists: FullDeployedImageOptions[] = JSON.parse(fs.readFileSync(listsPath, 'utf-8')) ?? []
+    return lists.find(item => item.name === this.options.name) !== undefined
+  }
+
+  async delete(): Promise<void | Error> {
+    const { fs, path } = this.image.getImageManager().getOptions()
+    const listsPath = path.resolve(this.image.getImageManager().getOptions().deployedPath, 'lists.json')
+    if (!fs.existsSync(listsPath) || !fs.statSync(listsPath).isFile())
+      return new Error('Lists file not found')
+    const lists: FullDeployedImageOptions[] = JSON.parse(fs.readFileSync(listsPath, 'utf-8')) ?? []
+    const index = lists.findIndex(item => item.name === this.options.name)
+    if (index === -1)
+      return new Error(`Device ${this.options.name} not found`)
+    lists.splice(index, 1)
+    fs.writeFileSync(listsPath, JSON.stringify(lists, null, 2))
+    fs.rmSync(path.resolve(this.options.path ?? ''), { recursive: true })
+    return undefined
+  }
 }
 
 export function createImageDeployer(
   image: LocalImage,
   uuid: string,
   name: string,
-  config: DeployedImageConfigWithProductName,
-): ImageDeployer {
+  config: ProductNameable<FullDeployedImageOptions>,
+): Device {
   return new ImageDeployerImpl(image as LocalImageImpl, uuid, name, config)
 }

@@ -19,6 +19,15 @@ export type DeployedDevModel
     | DevModel
     | (string & {})
 
+export type ProductNameable<T> = T & {
+  /**
+   * The name of the product.
+   *
+   * @example 'Mate 80 Pro Max、Mate 80 RS'
+   */
+  productName: string
+}
+
 export interface DeployedImageConfig {
   /**
    * Diagonal size.
