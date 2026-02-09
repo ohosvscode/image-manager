@@ -122,9 +122,9 @@ export async function resolveImageManagerOptions(options: ImageManagerOptions): 
   function resolveDefaultEmulatorPath(): string {
     switch (process.platform) {
       case 'darwin':
-        return '/Applications/DevEco-Studio.app/Contents/tools/emulator/Emulator'
+        return '/Applications/DevEco-Studio.app/Contents/tools/emulator'
       case 'win32':
-        return 'C:\\Program Files\\Huawei\\DevEco Studio\\tools\\emulator\\Emulator.exe'
+        return 'C:\\Program Files\\Huawei\\DevEco Studio\\tools\\emulator'
       default:
         return path.resolve(os.homedir(), '.huawei', 'Emulator')
     }
