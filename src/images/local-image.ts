@@ -80,7 +80,7 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
       '-path',
       `"${this.getImageManager().getOptions().deployedPath.replace(/"/g, '\\"')}"`,
       '-imageRoot',
-      `"${config.path.replace(/"/g, '\\"')}"`,
+      `"${this.getImageManager().getOptions().imageBasePath.replace(/"/g, '\\"')}"`,
     ].join(' ')
     return `${executablePath} ${args}`
   }
