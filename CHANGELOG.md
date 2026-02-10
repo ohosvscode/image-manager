@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.1.4
+
+### Patch Changes
+
+- f5a6969: fix: fix emulator path
+
 ## 0.1.3
 
 ### Patch Changes
