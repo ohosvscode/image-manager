@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.1.5
+
+### Patch Changes
+
+- e8ea32b: fix: fix start command -imageRoot args
+
 ## 0.1.4
 
 ### Patch Changes
