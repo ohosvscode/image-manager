@@ -6,6 +6,10 @@ export class DeployError extends Error {
   ) {
     super(message, { cause })
   }
+
+  getCode(): DeployError.Code {
+    return this.code
+  }
 }
 
 export namespace DeployError {

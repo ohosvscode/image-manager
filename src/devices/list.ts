@@ -112,7 +112,7 @@ export interface DeployedImageOptions extends DeployedImageConfig {
    *
    * @example 'Mate 80 Pro Max、Mate 80 RS'
    */
-  'model': string
+  'model'?: string
 }
 
 export interface FullDeployedImageOptions extends DeployedImageOptions {
@@ -163,7 +163,13 @@ export interface FullDeployedImageOptions extends DeployedImageOptions {
    *
    * @example 'HarmonyOS-6.0.1'
    */
-  'harmonyOSVersion': string
+  'harmonyOSVersion'?: string
+  /**
+   * Guest version.
+   *
+   * @example 'HarmonyOS 6.0.1(21)'
+   */
+  'guestVersion'?: string
   /**
    * Cover resolution width.
    *

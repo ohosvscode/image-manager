@@ -1,4 +1,3 @@
-import type { DeployedImageConfigWithProductName } from './deployer/list'
 import type { PascalCaseDeviceType } from './types'
 
 export interface ProductConfigItem {
@@ -61,13 +60,3 @@ export interface ProductConfigItem {
 }
 
 export type ProductConfig = Record<PascalCaseDeviceType, ProductConfigItem[]>
-
-export function createDeployedImageConfig(productConfigItem: ProductConfigItem): DeployedImageConfigWithProductName {
-  return {
-    density: productConfigItem.screenDensity,
-    resolutionHeight: productConfigItem.screenHeight,
-    resolutionWidth: productConfigItem.screenWidth,
-    diagonalSize: productConfigItem.screenDiagonal,
-    productName: productConfigItem.name,
-  }
-}

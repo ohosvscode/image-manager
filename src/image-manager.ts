@@ -3,6 +3,7 @@ import type { ImageManagerOptions, ResolvedImageManagerOptions } from './options
 import type { ProductConfig } from './product-config'
 import type { Arch, OS } from './types'
 import axios from 'axios'
+import satisfies from 'semver/functions/satisfies'
 import { LocalImageImpl } from './images/local-image'
 import { RemoteImageImpl } from './images/remote-image'
 import { resolveImageManagerOptions } from './options'
@@ -39,6 +40,10 @@ export interface ImageManager {
    * Get the architecture.
    */
   getArch(): Arch
+  /**
+   * Check if the emulator is compatible with current image manager.
+   */
+  isCompatible(): Promise<boolean>
 }
 
 class ImageManagerImpl implements ImageManager {
@@ -105,6 +110,18 @@ class ImageManagerImpl implements ImageManager {
     if (existSkip && this.resolvedOptions.fs.existsSync(productConfigPath))
       return
     this.resolvedOptions.fs.writeFileSync(productConfigPath, JSON.stringify((await import('./default-product-config')).default, null, 2))
+  }
+
+  async isCompatible(): Promise<boolean> {
+    const { fs, path, emulatorPath } = this.resolvedOptions
+    const sdkPkgPath = path.resolve(emulatorPath, 'sdk-pkg.json')
+    if (!fs.existsSync(sdkPkgPath) || !fs.statSync(sdkPkgPath).isFile())
+      return false
+    const sdkPkg = JSON.parse(fs.readFileSync(sdkPkgPath, 'utf-8'))
+    if (!sdkPkg?.data?.version || typeof sdkPkg.data.version !== 'string')
+      return false
+    const [major, minor, patch] = sdkPkg.data.version.split('.').map(Number)
+    return satisfies(`${major}.${minor}.${patch}`, '>=6.0.2')
   }
 }
 

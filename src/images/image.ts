@@ -12,6 +12,7 @@ export interface BaseImage {
   getPath(): string
   getArch(): 'arm' | 'x86' | (string & {})
   getChecksum(): string
+  getReleaseType(): string
   getVersion(): string
   getApiVersion(): string
   getTargetOS(): string
@@ -68,6 +69,10 @@ export abstract class ImageBase<T extends BaseImage.Stringifiable> implements Ba
 
   getChecksum(): string {
     return this.response?.archive?.complete?.checksum
+  }
+
+  getReleaseType(): string {
+    return this.response?.releaseType
   }
 
   getFsPath(): string {
