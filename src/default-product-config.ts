@@ -3,6 +3,24 @@ import type { ProductConfig } from './product-config'
 export default {
   'Phone': [
     {
+      name: 'nova 15 Pro、nova 15 Ultra',
+      screenWidth: '1320',
+      screenHeight: '2856',
+      screenDiagonal: '6.84',
+      screenDensity: '560',
+      oneCutoutPath: 'M517 45 L802 45 v 103 h -285 Z',
+      visible: true,
+    },
+    {
+      name: 'nova 15',
+      screenWidth: '1084',
+      screenHeight: '2412',
+      screenDiagonal: '6.7',
+      screenDensity: '480',
+      oneCutoutPath: 'M504 16 L580 16 v 76 h -76 Z',
+      visible: true,
+    },
+    {
       name: 'Mate 80 Pro Max、Mate 80 RS',
       screenWidth: '1320',
       screenHeight: '2848',

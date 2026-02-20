@@ -14,8 +14,10 @@ export interface ImageManager {
   getOptions(): ResolvedImageManagerOptions
   /**
    * Get the images.
+   *
+   * @param supportVersion - The support version of the images. Default is `6.0-hos-single-9`.
    */
-  getImages(): Promise<Image[]>
+  getImages(supportVersion?: string): Promise<Image[]>
   /**
    * Get the product config.
    *
@@ -63,11 +65,11 @@ class ImageManagerImpl implements ImageManager {
     return 'x86'
   }
 
-  async getImages(): Promise<Image[]> {
+  async getImages(supportVersion: string = '6.0-hos-single-9'): Promise<Image[]> {
     const response = await axios.post('https://devecostudio-drcn.deveco.dbankcloud.com/sdkmanager/v8/hos/getSdkList', {
       osArch: this.getArch(),
       osType: this.getOS(),
-      supportVersion: '6.0-hos-single-8',
+      supportVersion,
     })
     if (!Array.isArray(response.data))
       return []

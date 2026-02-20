@@ -51,6 +51,10 @@ export interface ProductConfigItem {
    */
   visible: boolean
   /**
+   * The one cutout path of the product.
+   */
+  oneCutoutPath?: string
+  /**
    * The dev model of the product.
    */
   devModel?: string
