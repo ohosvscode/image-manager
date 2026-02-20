@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.2.2
+
+### Patch Changes
+
+- 4f62b4a: feat: add DeployError exception when deploy the image
+
 ## 0.2.1
 
 ### Patch Changes
