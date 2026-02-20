@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.3.2
+
+### Patch Changes
+
+- 72261b0: fix: when re-search the device from file system the uuid and list are not equal
+
 ## 0.3.1
 
 ### Patch Changes
