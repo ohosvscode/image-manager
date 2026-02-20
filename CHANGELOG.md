@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.3.0
+
+### Minor Changes
+
+- 7b3cfb6: refactor: rebuild device interface, add screen and product preset interface
+
 ## 0.2.3
 
 ### Patch Changes

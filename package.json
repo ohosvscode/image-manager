@@ -1,7 +1,7 @@
 {
   "name": "@arkts/image-manager",
   "type": "module",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "OpenHarmony/HarmonyOS qemu image manager.",
   "author": "Naily Zero <zero@naily.cc> (https://naily.cc)",
   "license": "MIT",
