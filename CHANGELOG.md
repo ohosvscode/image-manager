@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.3.1
+
+### Patch Changes
+
+- d35eedf: fix: filter getDevices method
+
 ## 0.3.0
 
 ### Minor Changes
