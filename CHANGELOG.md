@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.3.3
+
+### Patch Changes
+
+- 9d2b509: feat: create device info's ini file
+
 ## 0.3.2
 
 ### Patch Changes
