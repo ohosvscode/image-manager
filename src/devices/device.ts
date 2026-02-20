@@ -12,7 +12,7 @@ export interface Device {
   getUuid(): Device.UUID
   buildList(): FullDeployedImageOptions
   buildIni(): Record<string, string | undefined>
-  toIniString(): Promise<string>
+  toIniString(): string
   deploy(): Promise<void>
   delete(): Promise<void>
   isDeployed(): Promise<boolean>
@@ -204,8 +204,22 @@ export class DeviceImpl implements Device {
     return ini
   }
 
-  async toIniString(): Promise<string> {
+  toIniString(): string {
     return `${Object.entries(this.buildIni())
+      .filter(([, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n')}\n`
+  }
+
+  buildDeviceIni(): Record<string, string | undefined> {
+    return {
+      'hvd.ini.encoding': 'UTF-8',
+      'path': this.buildList().path,
+    }
+  }
+
+  buildDeviceIniString(): string {
+    return `${Object.entries(this.buildDeviceIni())
       .filter(([, value]) => value !== undefined && value !== null)
       .map(([key, value]) => `${key}=${value}`)
       .join('\n')}\n`
@@ -234,12 +248,15 @@ export class DeviceImpl implements Device {
       throw new DeployError(DeployError.Code.DEVICE_ALREADY_DEPLOYED, `Image ${listConfig.name} already deployed in lists.json`)
     lists.push(listConfig)
 
-    // Write lists.json
-    fs.writeFileSync(listsPath, JSON.stringify(lists, null, 2))
-
     // Write config.ini
     fs.mkdirSync(listConfig.path, { recursive: true })
-    fs.writeFileSync(path.join(listConfig.path, 'config.ini'), await this.toIniString())
+    fs.writeFileSync(path.join(listConfig.path, 'config.ini'), this.toIniString())
+
+    // write device info's ini file
+    fs.writeFileSync(path.join(deployedPath, `${this.options.name}.ini`), this.buildDeviceIniString())
+
+    // Write lists.json
+    fs.writeFileSync(listsPath, JSON.stringify(lists, null, 2))
   }
 
   async delete(): Promise<void> {
@@ -255,6 +272,7 @@ export class DeviceImpl implements Device {
     lists.splice(index, 1)
     fs.writeFileSync(listsPath, JSON.stringify(lists, null, 2))
     fs.rmSync(path.resolve(this.buildList().path), { recursive: true })
+    fs.rmSync(path.resolve(deployedPath, `${this.options.name}.ini`))
   }
 
   async isDeployed(): Promise<boolean> {
