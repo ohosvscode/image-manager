@@ -1,6 +1,7 @@
 import type { LocalImage } from '../images'
 import type { LocalImageImpl } from '../images/local-image'
 import type { DeployedDevModel, DeployedImageOptions, FullDeployedImageOptions, ProductNameable } from './list'
+import { DeployError } from '../errors'
 
 export interface Device {
   setUuid(uuid: `${string}-${string}-${string}-${string}-${string}`): this
@@ -239,31 +240,55 @@ class ImageDeployerImpl implements Device {
       .join('\n')}\n`
   }
 
-  private writeLists(config: FullDeployedImageOptions): void | Error {
+  private async writeToListWithCheck(config: FullDeployedImageOptions): Promise<void | DeployError> {
     const fs = this.image.getImageManager().getOptions().fs
     const path = this.image.getImageManager().getOptions().path
     const listsPath = path.resolve(this.image.getImageManager().getOptions().deployedPath, 'lists.json')
-    if (!fs.existsSync(listsPath)) {
-      fs.writeFileSync(listsPath, JSON.stringify([config], null, 2))
+
+    try {
+      if (!fs.existsSync(listsPath)) {
+        fs.writeFileSync(listsPath, JSON.stringify([config], null, 2))
+      }
+      else {
+        const lists: FullDeployedImageOptions[] = JSON.parse(fs.readFileSync(listsPath, 'utf-8')) ?? []
+        if (!Array.isArray(lists))
+          return new DeployError(DeployError.Code.LIST_JSON_NOT_AN_ARRAY, 'Lists is not an array')
+        if (lists.find(item => item.name === config.name))
+          return
+        lists.push(config)
+        fs.writeFileSync(listsPath, JSON.stringify(lists, null, 2))
+      }
     }
-    else {
-      const lists: FullDeployedImageOptions[] = JSON.parse(fs.readFileSync(listsPath, 'utf-8')) ?? []
-      if (!Array.isArray(lists))
-        return new Error('Lists is not an array')
-      if (lists.find(item => item.name === config.name))
-        return
-      lists.push(config)
-      fs.writeFileSync(listsPath, JSON.stringify(lists, null, 2))
+    catch (err) {
+      return err instanceof Error ? new DeployError(DeployError.Code.CATCHED_ERROR, String(err)) : new DeployError(DeployError.Code.CATCHED_ERROR, String(err))
     }
+
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        const content: FullDeployedImageOptions[] = JSON.parse(fs.readFileSync(listsPath, 'utf-8')) ?? []
+
+        if (!Array.isArray(content)) {
+          resolve(new DeployError(DeployError.Code.LIST_JSON_NOT_AN_ARRAY, 'List rechecker is not an array!'))
+        }
+        else if (!content.find(item => item.name === config.name)) {
+          resolve(new DeployError(DeployError.Code.MAYBE_OPENED_DEVICE_MANAGER_IN_DEVECO_STUDIO, `Device ${config.name} not found in lists.json! Maybe not deployed yet?`))
+        }
+        else {
+          resolve()
+        }
+
+        clearTimeout(timer)
+      }, 1000)
+    })
   }
 
-  async deploy(symlinkImage: boolean = true): Promise<void | Error> {
+  async deploy(symlinkImage: boolean = true): Promise<void | DeployError> {
     const { fs, path, imageBasePath, sdkPath } = this.image.getImageManager().getOptions()
     const config = await this.buildList()
     if (fs.existsSync(config.path))
-      return new Error(`Image ${config.name} already deployed`)
+      return new DeployError(DeployError.Code.DEVICE_ALREADY_DEPLOYED, `Image ${config.name} already deployed`)
 
-    const error = this.writeLists(config)
+    const error = await this.writeToListWithCheck(config)
     if (error)
       return error
 
@@ -279,7 +304,7 @@ class ImageDeployerImpl implements Device {
       if (stat.isSymbolicLink())
         fs.unlinkSync(symlinkSdkPath)
       else
-        return undefined
+        return new DeployError(DeployError.Code.SYMLINK_SDK_PATH_EXISTS, 'Symlink SDK path already exists')
     }
     catch {
       // 路径不存在，继续创建
@@ -294,10 +319,9 @@ class ImageDeployerImpl implements Device {
         fs.symlinkSync(target, linkPath)
       }
       catch (err) {
-        return err instanceof Error ? err : new Error(String(err))
+        return err instanceof Error ? new DeployError(DeployError.Code.CATCHED_ERROR, String(err)) : new DeployError(DeployError.Code.CATCHED_ERROR, String(err))
       }
     }
-    return undefined
   }
 
   async isDeployed(): Promise<boolean> {
