@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.2.0
+
+### Minor Changes
+
+- 88df229: feat: update and sync with DevEco Studio 6.0.2 Release
+
 ## 0.1.5
 
 ### Patch Changes
