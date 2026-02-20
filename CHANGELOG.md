@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.2.3
+
+### Patch Changes
+
+- c942164: fix: add devModel
+
 ## 0.2.2
 
 ### Patch Changes
