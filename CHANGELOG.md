@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.2.1
+
+### Patch Changes
+
+- c1b8412: fix: export ProductConfigItem interface and package.json version
+
 ## 0.2.0
 
 ### Minor Changes
