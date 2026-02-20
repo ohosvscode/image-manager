@@ -78,7 +78,24 @@ export class DeviceImpl implements Device {
     return this.uuid
   }
 
+  private cachedList: FullDeployedImageOptions | null = null
+
+  setCachedList(list: FullDeployedImageOptions): this {
+    this.cachedList = list
+    return this
+  }
+
+  private cachedIni: Record<string, string | undefined> | null = null
+
+  setCachedIni(ini: Record<string, string | undefined>): this {
+    this.cachedIni = ini
+    return this
+  }
+
   buildList(): FullDeployedImageOptions {
+    if (this.cachedList)
+      return this.cachedList
+
     const { path, deployedPath, imageBasePath, configPath, logPath } = this.image.getImageManager().getOptions()
     const screen = this.getScreen()
 
@@ -121,6 +138,9 @@ export class DeviceImpl implements Device {
   }
 
   buildIni(options: Device.IniOptions = {}): Record<string, string | undefined> {
+    if (this.cachedIni)
+      return this.cachedIni
+
     const listConfig = this.buildList()
     const screen = this.getScreen()
     const is2in1Foldable = listConfig.type === '2in1_foldable'
@@ -192,6 +212,9 @@ export class DeviceImpl implements Device {
   }
 
   async deploy(): Promise<void> {
+    if (await this.isDeployed())
+      return
+
     const { fs, path, deployedPath } = this.image.getImageManager().getOptions()
 
     if (!fs.existsSync(deployedPath))

@@ -1,10 +1,11 @@
-import type { Device } from '../devices/device'
+import type { Device, DeviceImpl } from '../devices/device'
 import type { FullDeployedImageOptions } from '../devices/list'
 import type { ProductConfigItem } from '../product-config'
 import type { ProductPreset } from '../screens/product-preset'
 import type { Screen } from '../screens/screen'
 import type { DeviceType, PascalCaseDeviceType, Stringifiable } from '../types'
 import type { BaseImage } from './image'
+import INI from 'ini'
 import { createDevice } from '../devices/device'
 import { createProductPreset } from '../screens/product-preset'
 import { createScreen } from '../screens/screen'
@@ -161,6 +162,9 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
     for (const listsJsonItem of listsJson as FullDeployedImageOptions[]) {
       if (path.resolve(imageBasePath, listsJsonItem.imageDir) !== this.getFsPath())
         continue
+      const iniFilePath = path.resolve(listsJsonItem.path, 'config.ini')
+      if (!fs.existsSync(iniFilePath) || !fs.statSync(iniFilePath).isFile())
+        continue
 
       const device = this.createDevice({
         name: listsJsonItem.name,
@@ -168,9 +172,13 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
         diskSize: Number(listsJsonItem.dataDiskSize),
         memorySize: Number(listsJsonItem.memoryRamSize),
         screen: await this.createScreenLike(listsJsonItem),
-      })
+      }) as DeviceImpl
 
-      if (!fs.existsSync(device.buildList().path) || !fs.statSync(device.buildList().path).isDirectory())
+      device.setUuid(listsJsonItem.uuid as Device.UUID)
+        .setCachedList(listsJsonItem)
+        .setCachedIni(INI.parse(fs.readFileSync(iniFilePath, 'utf-8')))
+
+      if (!fs.existsSync(listsJsonItem.path) || !fs.statSync(listsJsonItem.path).isDirectory())
         continue
       devices.push(device)
     }
