@@ -148,7 +148,7 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
   }
 
   async getDevices(): Promise<Device[]> {
-    const { path, fs, deployedPath } = this.getImageManager().getOptions()
+    const { path, fs, deployedPath, imageBasePath } = this.getImageManager().getOptions()
     const listsJsonPath = path.resolve(deployedPath, 'lists.json')
     if (!fs.existsSync(listsJsonPath) || !fs.statSync(listsJsonPath).isFile())
       return []
@@ -159,15 +159,20 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
     const devices: Device[] = []
 
     for (const listsJsonItem of listsJson as FullDeployedImageOptions[]) {
-      devices.push(
-        this.createDevice({
-          name: listsJsonItem.name,
-          cpuNumber: Number(listsJsonItem.cpuNumber),
-          diskSize: Number(listsJsonItem.dataDiskSize),
-          memorySize: Number(listsJsonItem.memoryRamSize),
-          screen: await this.createScreenLike(listsJsonItem),
-        }),
-      )
+      if (path.resolve(imageBasePath, listsJsonItem.imageDir) !== this.getFsPath())
+        continue
+
+      const device = this.createDevice({
+        name: listsJsonItem.name,
+        cpuNumber: Number(listsJsonItem.cpuNumber),
+        diskSize: Number(listsJsonItem.dataDiskSize),
+        memorySize: Number(listsJsonItem.memoryRamSize),
+        screen: await this.createScreenLike(listsJsonItem),
+      })
+
+      if (!fs.existsSync(device.buildList().path) || !fs.statSync(device.buildList().path).isDirectory())
+        continue
+      devices.push(device)
     }
 
     return devices
