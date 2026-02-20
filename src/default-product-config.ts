@@ -10,6 +10,7 @@ export default {
       screenDensity: '560',
       oneCutoutPath: 'M517 45 L802 45 v 103 h -285 Z',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'nova 15',
@@ -19,6 +20,7 @@ export default {
       screenDensity: '480',
       oneCutoutPath: 'M504 16 L580 16 v 76 h -76 Z',
       visible: true,
+      devModel: 'PHEMU-FD00',
     },
     {
       name: 'Mate 80 Pro Max、Mate 80 RS',
