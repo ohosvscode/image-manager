@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.3.5
+
+### Patch Changes
+
+- a6f2bb4: feat: add getPascalCaseDeviceType method
+
 ## 0.3.4
 
 ### Patch Changes
