@@ -227,7 +227,7 @@ export class DeviceImpl implements Device {
 
   async deploy(): Promise<void> {
     if (await this.isDeployed())
-      return
+      throw new DeployError(DeployError.Code.DEVICE_ALREADY_DEPLOYED, `Image ${this.options.name} already deployed`)
 
     const { fs, path, deployedPath } = this.image.getImageManager().getOptions()
 
@@ -236,8 +236,6 @@ export class DeviceImpl implements Device {
 
     const listsPath = path.join(deployedPath, 'lists.json')
     const listConfig = this.buildList()
-    if (fs.existsSync(listConfig.path))
-      throw new DeployError(DeployError.Code.DEVICE_ALREADY_DEPLOYED, `Image ${listConfig.name} already deployed`)
 
     if (!fs.existsSync(listsPath))
       return fs.writeFileSync(listsPath, JSON.stringify([listConfig], null, 2))
