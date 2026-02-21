@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.3.4
+
+### Patch Changes
+
+- dd3ad61: feat: throw error when device is deployed
+
 ## 0.3.3
 
 ### Patch Changes
