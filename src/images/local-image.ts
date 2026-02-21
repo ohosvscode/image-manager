@@ -20,6 +20,7 @@ export interface LocalImage extends BaseImage, Stringifiable<LocalImage.Stringif
   stop(device: Device): Promise<import('node:child_process').ChildProcess>
   buildStartCommand(device: Device): Promise<string>
   buildStopCommand(device: Device): Promise<string>
+  getPascalCaseDeviceType(): Promise<PascalCaseDeviceType | undefined>
   getProductConfig(): Promise<ProductConfigItem[]>
 }
 
