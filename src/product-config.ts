@@ -59,4 +59,25 @@ export interface ProductConfigItem {
   devModel?: string
 }
 
+export namespace ProductConfigItem {
+  export function is(value: unknown): value is ProductConfigItem {
+    return typeof value === 'object'
+      && value !== null
+      && 'name' in value
+      && 'screenWidth' in value
+      && 'screenHeight' in value
+      && 'screenDiagonal' in value
+      && 'screenDensity' in value
+      && typeof value.name === 'string'
+      && typeof value.screenWidth === 'string'
+      && typeof value.screenHeight === 'string'
+      && typeof value.screenDiagonal === 'string'
+      && typeof value.screenDensity === 'string'
+  }
+}
+
 export type ProductConfig = Record<PascalCaseDeviceType, ProductConfigItem[]>
+
+export function isProductConfig(value: unknown): value is ProductConfig {
+  return typeof value === 'object' && value !== null && Object.values(value).every(item => Array.isArray(item))
+}

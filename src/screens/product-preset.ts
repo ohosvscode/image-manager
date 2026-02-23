@@ -1,13 +1,11 @@
 import type { ProductConfigItem } from '../product-config'
-import type { PascalCaseDeviceType } from '../types'
-import type { Screen } from './screen'
-import { createScreen } from './screen'
+import type { PascalCaseDeviceType, Stringifiable } from '../types'
+import type { ScreenPreset } from './screen-preset'
 
-export interface ProductPreset {
+export interface ProductPreset extends Stringifiable<ProductPreset.Stringifiable> {
+  getScreenPreset(): ScreenPreset
   getProductConfig(): ProductConfigItem
   getDeviceType(): PascalCaseDeviceType
-  toScreen(): Screen
-  toJSON(): ProductPreset.Stringifiable
 }
 
 export namespace ProductPreset {
@@ -21,6 +19,7 @@ export class ProductPresetImpl implements ProductPreset {
   constructor(
     private readonly productConfig: ProductConfigItem,
     private readonly deviceType: PascalCaseDeviceType,
+    private readonly screenPreset: ScreenPreset,
   ) {}
 
   getProductConfig(): ProductConfigItem {
@@ -31,13 +30,8 @@ export class ProductPresetImpl implements ProductPreset {
     return this.deviceType
   }
 
-  toScreen(): Screen {
-    return createScreen({
-      diagonal: Number(this.productConfig.screenDiagonal),
-      density: Number(this.productConfig.screenDensity),
-      height: Number(this.productConfig.screenHeight),
-      width: Number(this.productConfig.screenWidth),
-    })
+  getScreenPreset(): ScreenPreset {
+    return this.screenPreset
   }
 
   toJSON(): ProductPreset.Stringifiable {
@@ -48,6 +42,6 @@ export class ProductPresetImpl implements ProductPreset {
   }
 }
 
-export async function createProductPreset(productConfig: ProductConfigItem, deviceType: PascalCaseDeviceType): Promise<ProductPreset> {
-  return new ProductPresetImpl(productConfig, deviceType)
+export function createProductPreset(productConfig: ProductConfigItem, deviceType: PascalCaseDeviceType, screenPreset: ScreenPreset): ProductPreset {
+  return new ProductPresetImpl(productConfig, deviceType, screenPreset)
 }

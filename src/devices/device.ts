@@ -1,12 +1,15 @@
 import type { LocalImage } from '../images'
-import type { ProductPreset } from '../screens/product-preset'
 import type { Screen } from '../screens/screen'
+import type { ScreenPreset } from '../screens/screen-preset'
+import type { SnakecaseDeviceType } from '../types'
 import type { FullDeployedImageOptions } from './list'
 import { DeployError } from '../errors'
-import { ProductPresetImpl } from '../screens/product-preset'
+import { ScreenPresetImpl } from '../screens/screen-preset'
 
 export interface Device {
   getOptions(): Device.Options
+  getScreen(): Screen
+  getScreenPreset(): ScreenPreset | undefined
   getImage(): LocalImage
   setUuid(uuid: Device.UUID): this
   getUuid(): Device.UUID
@@ -27,7 +30,7 @@ export namespace Device {
     cpuNumber: number
     diskSize: number
     memorySize: number
-    screen: Screen | ProductPreset
+    screen: Screen | ScreenPreset
   }
 
   export interface IniOptions {
@@ -64,9 +67,15 @@ export class DeviceImpl implements Device {
   }
 
   getScreen(): Screen {
-    if (this.options.screen instanceof ProductPresetImpl)
-      return this.options.screen.toScreen()
+    if (this.options.screen instanceof ScreenPresetImpl)
+      return this.options.screen.getScreen()
     return this.options.screen as Screen
+  }
+
+  getScreenPreset(): ScreenPreset | undefined {
+    if (this.options.screen instanceof ScreenPresetImpl)
+      return this.options.screen
+    return undefined
   }
 
   setUuid(uuid: Device.UUID): this {
@@ -110,7 +119,7 @@ export class DeviceImpl implements Device {
       'memoryRamSize': this.options.memorySize.toFixed(),
       'dataDiskSize': this.options.diskSize.toFixed(),
       'path': path.resolve(deployedPath, this.options.name),
-      'type': this.image.getSnakecaseDeviceType(),
+      'type': this.image.getSnakecaseDeviceType() as SnakecaseDeviceType,
       'uuid': this.uuid,
       'version': this.image.getVersion(),
       'imageDir': this.image.getPath().split(',').join(path.sep) + path.sep,
@@ -124,13 +133,13 @@ export class DeviceImpl implements Device {
       'guestVersion': `${this.image.getTargetOS()} ${this.image.getVersion()}(${this.image.getReleaseType()})`,
     }
 
-    if (this.options.screen instanceof ProductPresetImpl) {
-      const productConfig = this.options.screen.getProductConfig()
+    if (this.options.screen instanceof ScreenPresetImpl) {
+      const productConfig = this.options.screen.getProductPreset()?.getProductConfig()
 
-      if (productConfig.devModel)
+      if (productConfig?.devModel)
         list.devModel = productConfig.devModel
 
-      if (productConfig.name)
+      if (productConfig?.name)
         list.model = productConfig.name
     }
 
@@ -144,8 +153,8 @@ export class DeviceImpl implements Device {
     const listConfig = this.buildList()
     const screen = this.getScreen()
     const is2in1Foldable = listConfig.type === '2in1_foldable'
-    const productPreset = this.options.screen instanceof ProductPresetImpl ? this.options.screen : null
-    const productConfig = productPreset?.getProductConfig()
+    const screenPreset = this.options.screen instanceof ScreenPresetImpl ? this.options.screen.getProductPreset() : null
+    const productConfig = screenPreset?.getProductConfig()
     const hasOuterScreen = is2in1Foldable && productConfig?.outerScreenWidth != null && productConfig?.outerScreenHeight != null && productConfig?.outerScreenDiagonal != null
 
     // 2in1 折叠屏：single=外屏(折叠)，double=主屏(展开)；非 2in1 或无 outer 时 single=主屏，number=1
@@ -182,7 +191,7 @@ export class DeviceImpl implements Device {
       'hw.lcd.number': useDualScreen ? '2' : '1',
       'hw.ramSize': listConfig.memoryRamSize,
       'hw.dataPartitionSize': listConfig.dataDiskSize,
-      'isCustomize': productPreset ? 'false' : 'true',
+      'isCustomize': screenPreset ? 'false' : 'true',
       'hw.hdc.port': 'notset',
       ...options.overrides,
     }
@@ -194,7 +203,7 @@ export class DeviceImpl implements Device {
     }
 
     // 非 2in1 双屏时，部分模拟器版本用 hw.phy 表示外屏像素；2in1 双屏时与 hw.lcd.single 一致，可省略
-    if (productPreset && productConfig && !useDualScreen) {
+    if (screenPreset && productConfig && !useDualScreen) {
       if (productConfig.outerScreenHeight)
         ini['hw.phy.height'] = productConfig.outerScreenHeight
       if (productConfig.outerScreenWidth)

@@ -1,3 +1,4 @@
+import type { EmulatorConfig } from './emulator-config'
 import type { Image } from './images/image'
 import type { ImageManagerOptions, ResolvedImageManagerOptions } from './options'
 import type { ProductConfig } from './product-config'
@@ -32,6 +33,13 @@ export interface ImageManager {
    * @param existSkip - If the file exists, skip writing. Defaults to `false`.
    */
   writeDefaultProductConfig(existSkip?: boolean): Promise<void>
+  /**
+   * Get the emulator config.
+   *
+   * It will automatically read from the `imageBasePath/emulatorConfig.json` file if it exists.
+   * If the file does not exist, it will use the default emulator config.
+   */
+  getEmulatorConfig(): Promise<EmulatorConfig>
   /**
    * Get the operating system.
    */
@@ -103,6 +111,16 @@ class ImageManagerImpl implements ImageManager {
     }
 
     return JSON.parse(this.resolvedOptions.fs.readFileSync(productConfigPath, 'utf-8'))
+  }
+
+  async getEmulatorConfig(): Promise<EmulatorConfig> {
+    const emulatorConfigPath = this.resolvedOptions.path.resolve(this.resolvedOptions.emulatorPath, 'emulator.json')
+    if (!this.resolvedOptions.fs.existsSync(emulatorConfigPath) || !this.resolvedOptions.fs.statSync(emulatorConfigPath).isFile()) {
+      const emulatorConfig = await import('./default-emulator-config')
+      return emulatorConfig.default
+    }
+
+    return JSON.parse(this.resolvedOptions.fs.readFileSync(emulatorConfigPath, 'utf-8'))
   }
 
   async writeDefaultProductConfig(existSkip = false): Promise<void> {

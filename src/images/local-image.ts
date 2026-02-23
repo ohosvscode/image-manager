@@ -1,14 +1,15 @@
 import type { Device, DeviceImpl } from '../devices/device'
 import type { FullDeployedImageOptions } from '../devices/list'
 import type { ProductConfigItem } from '../product-config'
-import type { ProductPreset } from '../screens/product-preset'
 import type { Screen } from '../screens/screen'
+import type { ScreenPreset } from '../screens/screen-preset'
 import type { DeviceType, PascalCaseDeviceType, Stringifiable } from '../types'
 import type { BaseImage } from './image'
 import INI from 'ini'
 import { createDevice } from '../devices/device'
-import { createProductPreset } from '../screens/product-preset'
+import { createOuterDoubleScreen, createOuterScreen } from '../screens'
 import { createScreen } from '../screens/screen'
+import { createScreenPreset } from '../screens/screen-preset'
 import { ImageBase } from './image'
 
 export interface LocalImage extends BaseImage, Stringifiable<LocalImage.Stringifiable> {
@@ -118,35 +119,57 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
     return child_process.exec(await this.buildStopCommand(device), { cwd: emulatorPath })
   }
 
-  private async createScreenLike(listsJsonItem: FullDeployedImageOptions): Promise<Screen | ProductPreset> {
-    if (!listsJsonItem.model) {
-      return createScreen({
-        diagonal: Number(listsJsonItem.diagonalSize),
-        height: Number(listsJsonItem.resolutionHeight),
-        width: Number(listsJsonItem.resolutionWidth),
-        density: Number(listsJsonItem.density),
-      })
+  private async createScreenLike(listsJsonItem: FullDeployedImageOptions): Promise<Screen | ScreenPreset> {
+    const productConfig = await this.getImageManager().getProductConfig()
+    const pascalCaseDeviceType = await this.getPascalCaseDeviceType()
+
+    const screen = createScreen({
+      diagonal: Number(listsJsonItem.diagonalSize),
+      height: Number(listsJsonItem.resolutionHeight),
+      width: Number(listsJsonItem.resolutionWidth),
+      density: Number(listsJsonItem.density),
+      deviceType: listsJsonItem.type,
+      apiVersion: Number(listsJsonItem.apiVersion),
+      cover: listsJsonItem.coverResolutionWidth && listsJsonItem.coverResolutionHeight && listsJsonItem.coverDiagonalSize
+        ? {
+            height: Number(listsJsonItem.coverResolutionHeight),
+            width: Number(listsJsonItem.coverResolutionWidth),
+            diagonal: Number(listsJsonItem.coverDiagonalSize),
+          }
+        : undefined,
+    })
+
+    if (pascalCaseDeviceType) {
+      const productConfigItem = productConfig[pascalCaseDeviceType].find(item => item.name === listsJsonItem.model)
+      if (productConfigItem && productConfigItem.outerScreenWidth && productConfigItem.outerScreenHeight && productConfigItem.outerScreenDiagonal) {
+        screen.setOuterScreen(
+          createOuterScreen({
+            width: Number(productConfigItem.outerScreenWidth),
+            height: Number(productConfigItem.outerScreenHeight),
+            diagonal: Number(productConfigItem.outerScreenDiagonal),
+          }, screen),
+        )
+      }
+      if (productConfigItem && productConfigItem.outerDoubleScreenWidth && productConfigItem.outerDoubleScreenHeight && productConfigItem.outerDoubleScreenDiagonal) {
+        screen.getOuterScreen()?.setOuterDoubleScreen(
+          createOuterDoubleScreen({
+            width: Number(productConfigItem.outerDoubleScreenWidth),
+            height: Number(productConfigItem.outerDoubleScreenHeight),
+            diagonal: Number(productConfigItem.outerDoubleScreenDiagonal),
+          }, screen.getOuterScreen()!),
+        )
+      }
     }
 
-    const productConfig = await this.getProductConfig()
-    const productConfigItem = productConfig.find(item => item.name === listsJsonItem.model)
-    const pascalCaseDeviceType = await this.getPascalCaseDeviceType()
-    if (
-      !productConfigItem
-      || !pascalCaseDeviceType
-      || productConfigItem.screenDiagonal !== listsJsonItem.diagonalSize
-      || productConfigItem.screenHeight !== listsJsonItem.resolutionHeight
-      || productConfigItem.screenWidth !== listsJsonItem.resolutionWidth
-      || productConfigItem.screenDensity !== listsJsonItem.density
-    ) {
-      return createScreen({
-        diagonal: Number(listsJsonItem.diagonalSize),
-        height: Number(listsJsonItem.resolutionHeight),
-        width: Number(listsJsonItem.resolutionWidth),
-        density: Number(listsJsonItem.density),
-      })
-    }
-    return createProductPreset(productConfigItem, pascalCaseDeviceType)
+    const screenPreset = createScreenPreset({
+      screen,
+      productConfig,
+      emulatorConfig: await this.getImageManager().getEmulatorConfig(),
+    })
+    if (screenPreset.getProductPreset() || screenPreset.getEmulatorPreset())
+      return screenPreset
+    else
+      return screen
   }
 
   async getDevices(): Promise<Device[]> {

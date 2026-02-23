@@ -22,6 +22,24 @@ export type SnakecaseDeviceType
     | '2in1_foldable'
     | 'tv'
     | 'wearable'
+export type ParentEmulatorSnakecaseDeviceType
+  = | SnakecaseDeviceType
+    | 'pc_all'
+    | 'phone_all'
+export type PhoneAllSnakecaseDeviceType
+  = | 'phone'
+    | 'triplefold'
+    | 'widefold'
+    | 'foldable'
+export function isPhoneAllSnakecaseDeviceType(value: unknown): value is PhoneAllSnakecaseDeviceType {
+  return value === 'phone' || value === 'triplefold' || value === 'widefold' || value === 'foldable'
+}
+export type PCAllSnakecaseDeviceType
+  = | '2in1_foldable'
+    | '2in1'
+export function isPCAllSnakecaseDeviceType(value: unknown): value is PCAllSnakecaseDeviceType {
+  return value === '2in1_foldable' || value === '2in1'
+}
 export type PascalCaseDeviceType
   = | 'Phone'
     | 'Tablet'

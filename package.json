@@ -40,7 +40,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown --dts --format esm,cjs src/index.ts src/default-product-config.ts",
+    "build": "tsdown --dts --format esm,cjs src/index.ts src/default-product-config.ts src/default-emulator-config.ts",
     "test": "vitest --coverage --ui",
     "lint": "eslint ."
   },

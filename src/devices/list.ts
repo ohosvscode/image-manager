@@ -1,3 +1,5 @@
+import type { SnakecaseDeviceType } from '../types'
+
 export enum DevModel {
   MCHEMU_AL00CN = 'MCHEMU-AL00CN',
   PHEMU_FD00 = 'PHEMU-FD00',
@@ -133,7 +135,7 @@ export interface FullDeployedImageOptions extends DeployedImageOptions {
    *
    * @example 'wearable', 'phone', 'tablet'
    */
-  'type': 'wearable' | 'phone' | 'tablet' | '2in1' | 'tv' | (string & {})
+  'type': SnakecaseDeviceType
   /**
    * Architecture.
    *

@@ -2,7 +2,8 @@ import type { ImageManager } from '../src'
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect } from 'vitest'
-import { createImageManager, createProductPreset, RequestUrlError } from '../src'
+import { createImageManager, RequestUrlError } from '../src'
+import { createScreenPreset } from '../src/screens/screen-preset'
 
 const imageBasePath = path.resolve(__dirname, 'fixtures', 'images')
 const deployedPath = path.resolve(__dirname, 'fixtures', 'deployed')
@@ -51,7 +52,7 @@ describe.sequential('image manager', (it) => {
     await downloader.clean()
   }, 1000 * 60 * 10)
 
-  it.sequential('should deploy image', async () => {
+  it.sequential('should deploy and run image', async () => {
     const image = await imageManager.getImages().then(images => images.find(image => image.imageType === 'local'))
     if (!image)
       return console.error('No local image found')
@@ -62,13 +63,19 @@ describe.sequential('image manager', (it) => {
     if (!mateBookFold)
       throw new Error('MateBook Fold not found')
     const uuid = crypto.randomUUID()
+    const pascalCaseDeviceType = await image.getPascalCaseDeviceType()
+    if (!pascalCaseDeviceType)
+      throw new Error('PascalCaseDeviceType not found')
     const deployer = image.createDevice({
       name: 'MateBook Fold',
       cpuNumber: 4,
       diskSize: 6144,
       memorySize: 4096,
-      screen: await createProductPreset(mateBookFold, '2in1 Foldable'),
+      screen: createScreenPreset({ image, productConfig: mateBookFold, pascalCaseDeviceType }),
     }).setUuid(uuid)
+
+    expect(deployer.getScreenPreset()).toBeDefined()
+    expect(deployer.getScreenPreset()?.getProductPreset()).toBeDefined()
 
     expect(deployer.buildList()).toMatchInlineSnapshot(`
       {
@@ -133,7 +140,7 @@ describe.sequential('image manager', (it) => {
       }
     `)
 
-    expect(await deployer.toIniString()).toMatchInlineSnapshot(`
+    expect(deployer.toIniString()).toMatchInlineSnapshot(`
       "name=MateBook Fold
       deviceType=2in1_foldable
       deviceModel=PCEMU-FD05
@@ -177,6 +184,26 @@ describe.sequential('image manager', (it) => {
       })
       .then(() => image.stop(deployer))
   }, 1000 * 100)
+
+  it.sequential('should get all devices', async () => {
+    const devices = await imageManager.getImages()
+      .then(images => images.filter(image => image.imageType === 'local')
+        .map(image => image.getDevices()))
+      .then(devices => Promise.all(devices))
+      .then(devices => devices.flat())
+
+    console.warn(devices)
+    for (const device of devices) {
+      console.warn('===== Screen =====')
+      console.warn(device.getScreen())
+      console.warn('===== Screen Preset =====')
+      console.warn(device.getScreenPreset())
+      console.warn('===== Product Preset =====')
+      console.warn(device.getScreenPreset()?.getProductPreset())
+      console.warn('===== Emulator Preset =====')
+      console.warn(device.getScreenPreset()?.getEmulatorPreset())
+    }
+  })
 })
 
 describe.skip('start', (it) => {
@@ -194,13 +221,16 @@ describe.skip('start', (it) => {
     const mateBookFold = productConfig.find(item => item.name === 'MateBook Fold')
     if (!mateBookFold)
       throw new Error('MateBook Fold not found')
+    const pascalCaseDeviceType = await image.getPascalCaseDeviceType()
+    if (!pascalCaseDeviceType)
+      throw new Error('PascalCaseDeviceType not found')
     await image.start(
       image.createDevice({
         name: 'MateBook Fold',
         cpuNumber: 4,
         diskSize: 6144,
         memorySize: 4096,
-        screen: await createProductPreset(mateBookFold, '2in1 Foldable'),
+        screen: createScreenPreset({ image, productConfig: mateBookFold, pascalCaseDeviceType }),
       }),
     )
   }, 1000 * 1000)

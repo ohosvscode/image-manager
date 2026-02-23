@@ -1,5 +1,6 @@
 export { version } from '../package.json'
 export * from './devices'
+export * from './emulator-config'
 export * from './errors'
 export { createImageManager, type ImageManager } from './image-manager'
 export * from './images'

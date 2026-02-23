@@ -7,7 +7,6 @@ import type { RemoteImageImpl } from './images/remote-image'
 import axios, { AxiosError } from 'axios'
 import mitt from 'mitt'
 import progress from 'progress-stream'
-import unzipper from 'unzipper'
 
 export interface ImageDownloadProgressEvent extends AxiosProgressEvent {
   /**
@@ -173,6 +172,8 @@ class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements
   }
 
   async extract(signal?: AbortSignal, symlinkOpenHarmonySdk: boolean = true): Promise<void> {
+    const unzipper = await import('unzipper')
+
     const { fs, path, imageBasePath, sdkPath } = this.image.getImageManager().getOptions()
     const cacheFsPath = this.getCacheFsPath()
     const stream = fs.createReadStream(cacheFsPath, { signal })
