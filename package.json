@@ -31,7 +31,25 @@
       },
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./default-product-config": {
+      "types": {
+        "import": "./dist/default-product-config.d.mts",
+        "require": "./dist/default-product-config.d.cts"
+      },
+      "import": "./dist/default-product-config.mjs",
+      "require": "./dist/default-product-config.cjs"
+    },
+    "./default-emulator-config": {
+      "types": {
+        "import": "./dist/default-emulator-config.d.mts",
+        "require": "./dist/default-emulator-config.d.cts"
+      },
+      "import": "./dist/default-emulator-config.mjs",
+      "require": "./dist/default-emulator-config.cjs"
+    },
+    "./package.json": "./package.json",
+    "./dist/*": "./dist/*"
   },
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
