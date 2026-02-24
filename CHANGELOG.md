@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.4.1
+
+### Patch Changes
+
+- 11c95b1: fix: createScreenLike
+
 ## 0.4.0
 
 ### Minor Changes
