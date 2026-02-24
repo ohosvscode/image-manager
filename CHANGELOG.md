@@ -1,5 +1,15 @@
 # @arkts/image-manager
 
+## 0.4.0
+
+### Minor Changes
+
+- 5e9679b: refactor: ProductPreset -> ScreenPreset, add more screen size's getter/setter
+
+### Patch Changes
+
+- 3a34a9a: chore: export default emulator/product config and dist、package.json files
+
 ## 0.3.5
 
 ### Patch Changes
