@@ -140,7 +140,7 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
     })
 
     if (pascalCaseDeviceType) {
-      const productConfigItem = productConfig[pascalCaseDeviceType].find(item => item.name === listsJsonItem.model)
+      const productConfigItem = productConfig[pascalCaseDeviceType]?.find(item => item.name === listsJsonItem.model)
       if (productConfigItem && productConfigItem.outerScreenWidth && productConfigItem.outerScreenHeight && productConfigItem.outerScreenDiagonal) {
         screen.setOuterScreen(
           createOuterScreen({
