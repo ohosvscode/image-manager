@@ -327,6 +327,12 @@ export function createScreenPreset(options: ScreenPreset.ScreenOptions): ScreenP
  * @param options - The options to create a screen preset.
  */
 export function createScreenPreset(options: ScreenPreset.ProductOptions): ScreenPreset
+/**
+ * Create a screen preset with emulator options and local image.
+ *
+ * @param options - The options to create a screen preset.
+ */
+export function createScreenPreset(options: ScreenPreset.EmulatorOptions): ScreenPreset
 export function createScreenPreset(options: ScreenPreset.Options): ScreenPreset {
   return new ScreenPresetImpl(options)
 }
