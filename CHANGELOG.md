@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.4.2
+
+### Patch Changes
+
+- fd7acc1: fix: when set emulator preset throw 'Cannot read properties of undefined' error
+
 ## 0.4.1
 
 ### Patch Changes
