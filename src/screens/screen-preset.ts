@@ -1,17 +1,20 @@
-import type { EmulatorConfig } from '../emulator-config'
+import type { EmulatorConfig, EmulatorConfigItem } from '../emulator-config'
 import type { LocalImage } from '../images'
-import type { ProductConfig, ProductConfigItem } from '../product-config'
+import type { ProductConfig } from '../product-config'
 import type { PascalCaseDeviceType, SnakecaseDeviceType, Stringifiable } from '../types'
 import type { EmulatorPreset } from './emulator-preset'
 import type { ProductPreset } from './product-preset'
 import { GroupPCAllEmulatorConfigItem, GroupPhoneAllEmulatorConfigItem, ParentEmulatorConfigItem, PCAllEmulatorConfigItem, PhoneAllEmulatorConfigItem } from '../emulator-config'
-import { isProductConfig } from '../product-config'
+import { ProductConfigItem } from '../product-config'
 import { isPCAllSnakecaseDeviceType, isPhoneAllSnakecaseDeviceType } from '../types'
+import { createCoverScreen } from './cover-screen'
+import { createDoubleScreen } from './double-screen'
 import { createEmulatorPreset } from './emulator-preset'
 import { createOuterDoubleScreen } from './outer-double-screen'
 import { createOuterScreen } from './outer-screen'
 import { createProductPreset } from './product-preset'
 import { createScreen, Screen } from './screen'
+import { createSingleScreen } from './single-screen'
 
 export interface ScreenPreset extends Stringifiable<ScreenPreset.Stringifiable> {
   getScreen(): Screen
@@ -26,13 +29,46 @@ export namespace ScreenPreset {
     emulatorConfig?: EmulatorConfig
   }
 
+  export namespace ScreenOptions {
+    export function is(value: unknown): value is ScreenOptions {
+      return typeof value === 'object'
+        && value !== null
+        && 'screen' in value
+        && Screen.is(value.screen)
+    }
+  }
+
   export interface ProductOptions {
     image: LocalImage
     productConfig: ProductConfigItem
     pascalCaseDeviceType: PascalCaseDeviceType
   }
 
-  export type Options = ScreenOptions | ProductOptions
+  export namespace ProductOptions {
+    export function is(value: unknown): value is ProductOptions {
+      return typeof value === 'object'
+        && value !== null
+        && 'image' in value
+        && 'productConfig' in value
+        && ProductConfigItem.is(value.productConfig)
+    }
+  }
+
+  export interface EmulatorOptions {
+    image: LocalImage
+    emulatorConfig: EmulatorConfigItem
+  }
+
+  export namespace EmulatorOptions {
+    export function is(value: unknown): value is EmulatorOptions {
+      return typeof value === 'object'
+        && value !== null
+        && 'image' in value
+        && 'emulatorConfig' in value
+    }
+  }
+
+  export type Options = ScreenOptions | ProductOptions | EmulatorOptions
 
   export interface Stringifiable {
     emulatorPreset?: EmulatorPreset.Stringifiable
@@ -54,53 +90,97 @@ export class ScreenPresetImpl implements ScreenPreset {
     this.setProductPreset()
   }
 
-  private isScreenOptions(options: ScreenPreset.Options): options is ScreenPreset.ScreenOptions {
-    return 'screen' in options
-      && Screen.is(options.screen)
-  }
-
   private _screen?: Screen
 
   getScreen(): Screen {
-    if (this.isScreenOptions(this.options))
+    if (ScreenPreset.ScreenOptions.is(this.options))
       return this.options.screen
     if (this._screen)
       return this._screen
 
-    this._screen = createScreen({
-      width: Number(this.options.productConfig.screenWidth),
-      height: Number(this.options.productConfig.screenHeight),
-      diagonal: Number(this.options.productConfig.screenDiagonal),
-      density: Number(this.options.productConfig.screenDensity),
-      apiVersion: Number.parseInt(this.options.image.getApiVersion()),
-      deviceType: this.options.image.getSnakecaseDeviceType() as SnakecaseDeviceType,
-    })
-    if (this.options.productConfig.outerScreenWidth && this.options.productConfig.outerScreenHeight && this.options.productConfig.outerScreenDiagonal) {
-      this._screen.setOuterScreen(
-        createOuterScreen({
-          width: Number(this.options.productConfig.outerScreenWidth),
-          height: Number(this.options.productConfig.outerScreenHeight),
-          diagonal: Number(this.options.productConfig.outerScreenDiagonal),
-        }, this._screen),
-      )
+    if (ScreenPreset.ProductOptions.is(this.options)) {
+      this._screen = createScreen({
+        width: Number(this.options.productConfig.screenWidth),
+        height: Number(this.options.productConfig.screenHeight),
+        diagonal: Number(this.options.productConfig.screenDiagonal),
+        density: Number(this.options.productConfig.screenDensity),
+        apiVersion: Number.parseInt(this.options.image.getApiVersion()),
+        deviceType: this.options.image.getSnakecaseDeviceType() as SnakecaseDeviceType,
+      })
+      if (this.options.productConfig.outerScreenWidth && this.options.productConfig.outerScreenHeight && this.options.productConfig.outerScreenDiagonal) {
+        this._screen.setOuterScreen(
+          createOuterScreen({
+            width: Number(this.options.productConfig.outerScreenWidth),
+            height: Number(this.options.productConfig.outerScreenHeight),
+            diagonal: Number(this.options.productConfig.outerScreenDiagonal),
+          }, this._screen),
+        )
+      }
+      if (this.options.productConfig.outerDoubleScreenWidth && this.options.productConfig.outerDoubleScreenHeight && this.options.productConfig.outerDoubleScreenDiagonal) {
+        this._screen.getOuterScreen()?.setOuterDoubleScreen(
+          createOuterDoubleScreen({
+            width: Number(this.options.productConfig.outerDoubleScreenWidth),
+            height: Number(this.options.productConfig.outerDoubleScreenHeight),
+            diagonal: Number(this.options.productConfig.outerDoubleScreenDiagonal),
+          }, this._screen.getOuterScreen()!),
+        )
+      }
+
+      return this._screen
     }
-    if (this.options.productConfig.outerDoubleScreenWidth && this.options.productConfig.outerDoubleScreenHeight && this.options.productConfig.outerDoubleScreenDiagonal) {
-      this._screen.getOuterScreen()?.setOuterDoubleScreen(
-        createOuterDoubleScreen({
-          width: Number(this.options.productConfig.outerDoubleScreenWidth),
-          height: Number(this.options.productConfig.outerDoubleScreenHeight),
-          diagonal: Number(this.options.productConfig.outerDoubleScreenDiagonal),
-        }, this._screen.getOuterScreen()!),
-      )
+
+    if (ScreenPreset.EmulatorOptions.is(this.options)) {
+      this._screen = createScreen({
+        width: this.options.emulatorConfig.resolutionWidth,
+        height: this.options.emulatorConfig.resolutionHeight,
+        diagonal: this.options.emulatorConfig.diagonalSize,
+        density: this.options.emulatorConfig.density,
+        apiVersion: Number.parseInt(this.options.image.getApiVersion()),
+        deviceType: this.options.image.getSnakecaseDeviceType() as SnakecaseDeviceType,
+      })
+
+      if (this.options.emulatorConfig.coverResolutionWidth && this.options.emulatorConfig.coverResolutionHeight && this.options.emulatorConfig.coverDiagonalSize) {
+        this._screen.setCoverScreen(
+          createCoverScreen({
+            width: this.options.emulatorConfig.coverResolutionWidth,
+            height: this.options.emulatorConfig.coverResolutionHeight,
+            diagonal: this.options.emulatorConfig.coverDiagonalSize,
+          }, this._screen),
+        )
+      }
+      if (PhoneAllEmulatorConfigItem.is(this.options.emulatorConfig)) {
+        if (this.options.emulatorConfig.singleResolutionWidth && this.options.emulatorConfig.singleResolutionHeight && this.options.emulatorConfig.singleDiagonalSize) {
+          this._screen.setSingleScreen(
+            createSingleScreen({
+              width: this.options.emulatorConfig.singleResolutionWidth,
+              height: this.options.emulatorConfig.singleResolutionHeight,
+              diagonal: this.options.emulatorConfig.singleDiagonalSize,
+            }, this._screen),
+          )
+        }
+
+        if (this.options.emulatorConfig.doubleResolutionWidth && this.options.emulatorConfig.doubleResolutionHeight && this.options.emulatorConfig.doubleDiagonalSize) {
+          this._screen.setDoubleScreen(
+            createDoubleScreen({
+              width: this.options.emulatorConfig.doubleResolutionWidth,
+              height: this.options.emulatorConfig.doubleResolutionHeight,
+              diagonal: this.options.emulatorConfig.doubleDiagonalSize,
+            }, this._screen),
+          )
+        }
+      }
+
+      return this._screen
     }
-    return this._screen
+
+    throw new Error('Invalid createScreenPreset options.')
   }
 
-  private getProductConfigItems(): [ProductConfigItem[], PascalCaseDeviceType] | undefined {
-    if (!this.options.productConfig || !isProductConfig(this.options.productConfig))
+  private getProductConfigItemsByScreenOptions(): [ProductConfigItem[], PascalCaseDeviceType] | undefined {
+    if (!ScreenPreset.ScreenOptions.is(this.options))
       return
 
-    for (const [pascalCaseDeviceType, productConfigItem] of Object.entries(this.options.productConfig) as [PascalCaseDeviceType, ProductConfigItem[]][]) {
+    for (const [pascalCaseDeviceType, productConfigItem] of Object.entries(this.options.productConfig ?? {}) as [PascalCaseDeviceType, ProductConfigItem[]][]) {
       if (pascalCaseDeviceType === '2in1' && this.getScreen().getSnakecaseDeviceType() === '2in1') {
         return [productConfigItem, pascalCaseDeviceType]
       }
@@ -135,83 +215,88 @@ export class ScreenPresetImpl implements ScreenPreset {
   }
 
   private setProductPreset(): void {
-    if (!this.isScreenOptions(this.options)) {
-      this.productPreset = createProductPreset(this.options.productConfig, this.options.pascalCaseDeviceType, this)
-      return
+    if (ScreenPreset.ScreenOptions.is(this.options)) {
+      const [productConfigItems = [], pascalCaseDeviceType] = this.getProductConfigItemsByScreenOptions() ?? []
+      if (!pascalCaseDeviceType || !productConfigItems.length)
+        return
+
+      for (const productConfigItem of productConfigItems) {
+        if (
+          this.getScreen().getWidth() !== Number(productConfigItem.screenWidth)
+          || this.getScreen().getHeight() !== Number(productConfigItem.screenHeight)
+          || this.getScreen().getDiagonal() !== Number(productConfigItem.screenDiagonal)
+          || this.getScreen().getDensity() !== Number(productConfigItem.screenDensity)
+        ) {
+          continue
+        }
+        if (productConfigItem.outerScreenWidth && productConfigItem.outerScreenHeight && productConfigItem.outerScreenDiagonal) {
+          const outerScreen = this.getScreen().getOuterScreen()
+          if (!outerScreen)
+            continue
+          if (
+            outerScreen.getWidth() !== Number(productConfigItem.outerScreenWidth)
+            || outerScreen.getHeight() !== Number(productConfigItem.outerScreenHeight)
+            || outerScreen.getDiagonal() !== Number(productConfigItem.outerScreenDiagonal)
+          ) {
+            continue
+          }
+        }
+        if (productConfigItem.outerDoubleScreenWidth && productConfigItem.outerDoubleScreenHeight && productConfigItem.outerDoubleScreenDiagonal) {
+          const outerDoubleScreen = this.getScreen().getOuterScreen()?.getOuterDoubleScreen()
+          if (!outerDoubleScreen)
+            continue
+          if (
+            outerDoubleScreen.getWidth() !== Number(productConfigItem.outerDoubleScreenWidth)
+            || outerDoubleScreen.getHeight() !== Number(productConfigItem.outerDoubleScreenHeight)
+            || outerDoubleScreen.getDiagonal() !== Number(productConfigItem.outerDoubleScreenDiagonal)
+          ) {
+            continue
+          }
+        }
+        this.productPreset = createProductPreset(productConfigItem, pascalCaseDeviceType, this)
+        return
+      }
     }
-
-    const [productConfigItems = [], pascalCaseDeviceType] = this.getProductConfigItems() ?? []
-    if (!pascalCaseDeviceType || !productConfigItems.length)
-      return
-
-    for (const productConfigItem of productConfigItems) {
-      if (
-        this.getScreen().getWidth() !== Number(productConfigItem.screenWidth)
-        || this.getScreen().getHeight() !== Number(productConfigItem.screenHeight)
-        || this.getScreen().getDiagonal() !== Number(productConfigItem.screenDiagonal)
-        || this.getScreen().getDensity() !== Number(productConfigItem.screenDensity)
-      ) {
-        continue
-      }
-      if (productConfigItem.outerScreenWidth && productConfigItem.outerScreenHeight && productConfigItem.outerScreenDiagonal) {
-        const outerScreen = this.getScreen().getOuterScreen()
-        if (!outerScreen)
-          continue
-        if (
-          outerScreen.getWidth() !== Number(productConfigItem.outerScreenWidth)
-          || outerScreen.getHeight() !== Number(productConfigItem.outerScreenHeight)
-          || outerScreen.getDiagonal() !== Number(productConfigItem.outerScreenDiagonal)
-        ) {
-          continue
-        }
-      }
-      if (productConfigItem.outerDoubleScreenWidth && productConfigItem.outerDoubleScreenHeight && productConfigItem.outerDoubleScreenDiagonal) {
-        const outerDoubleScreen = this.getScreen().getOuterScreen()?.getOuterDoubleScreen()
-        if (!outerDoubleScreen)
-          continue
-        if (
-          outerDoubleScreen.getWidth() !== Number(productConfigItem.outerDoubleScreenWidth)
-          || outerDoubleScreen.getHeight() !== Number(productConfigItem.outerDoubleScreenHeight)
-          || outerDoubleScreen.getDiagonal() !== Number(productConfigItem.outerDoubleScreenDiagonal)
-        ) {
-          continue
-        }
-      }
-      this.productPreset = createProductPreset(productConfigItem, pascalCaseDeviceType, this)
-      return
+    else if (ScreenPreset.ProductOptions.is(this.options)) {
+      this.productPreset = createProductPreset(this.options.productConfig, this.options.pascalCaseDeviceType, this)
+    }
+    else if (ScreenPreset.EmulatorOptions.is(this.options)) {
+      this.emulatorPreset = createEmulatorPreset(this.options.emulatorConfig, this)
     }
   }
 
   private setEmulatorPreset(): void {
-    if (!this.isScreenOptions(this.options))
-      return
-
-    if (!this.options.emulatorConfig)
-      return
-
-    for (const parentConfigItem of this.options.emulatorConfig) {
-      if (parentConfigItem.api !== this.options.screen.getApiVersion())
-        continue
-      if (ParentEmulatorConfigItem.is(parentConfigItem) && parentConfigItem.deviceType === this.options.screen.getSnakecaseDeviceType()) {
-        this.emulatorPreset = createEmulatorPreset(parentConfigItem, this)
+    if (ScreenPreset.ScreenOptions.is(this.options)) {
+      if (!this.options.emulatorConfig)
         return
-      }
-      if (GroupPhoneAllEmulatorConfigItem.is(parentConfigItem) && isPhoneAllSnakecaseDeviceType(this.options.screen.getSnakecaseDeviceType())) {
-        for (const childrenConfigItem of parentConfigItem.children) {
-          if (PhoneAllEmulatorConfigItem.is(childrenConfigItem) && childrenConfigItem.deviceType === this.options.screen.getSnakecaseDeviceType()) {
-            this.emulatorPreset = createEmulatorPreset(childrenConfigItem, this)
-            return
+
+      for (const parentConfigItem of this.options.emulatorConfig) {
+        if (parentConfigItem.api !== this.options.screen.getApiVersion())
+          continue
+        if (ParentEmulatorConfigItem.is(parentConfigItem) && parentConfigItem.deviceType === this.options.screen.getSnakecaseDeviceType()) {
+          this.emulatorPreset = createEmulatorPreset(parentConfigItem, this)
+          return
+        }
+        if (GroupPhoneAllEmulatorConfigItem.is(parentConfigItem) && isPhoneAllSnakecaseDeviceType(this.options.screen.getSnakecaseDeviceType())) {
+          for (const childrenConfigItem of parentConfigItem.children) {
+            if (PhoneAllEmulatorConfigItem.is(childrenConfigItem) && childrenConfigItem.deviceType === this.options.screen.getSnakecaseDeviceType()) {
+              this.emulatorPreset = createEmulatorPreset(childrenConfigItem, this)
+              return
+            }
+          }
+        }
+        if (GroupPCAllEmulatorConfigItem.is(parentConfigItem) && isPCAllSnakecaseDeviceType(this.options.screen.getSnakecaseDeviceType())) {
+          for (const childrenConfigItem of parentConfigItem.children) {
+            if (PCAllEmulatorConfigItem.is(childrenConfigItem) && childrenConfigItem.deviceType === this.options.screen.getSnakecaseDeviceType()) {
+              this.emulatorPreset = createEmulatorPreset(childrenConfigItem, this)
+              return
+            }
           }
         }
       }
-      if (GroupPCAllEmulatorConfigItem.is(parentConfigItem) && isPCAllSnakecaseDeviceType(this.options.screen.getSnakecaseDeviceType())) {
-        for (const childrenConfigItem of parentConfigItem.children) {
-          if (PCAllEmulatorConfigItem.is(childrenConfigItem) && childrenConfigItem.deviceType === this.options.screen.getSnakecaseDeviceType()) {
-            this.emulatorPreset = createEmulatorPreset(childrenConfigItem, this)
-            return
-          }
-        }
-      }
+    }
+    else if (ScreenPreset.EmulatorOptions.is(this.options)) {
+      this.emulatorPreset = createEmulatorPreset(this.options.emulatorConfig, this)
     }
   }
 
