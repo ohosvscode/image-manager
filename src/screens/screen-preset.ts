@@ -315,12 +315,7 @@ export class ScreenPresetImpl implements ScreenPreset {
     }
   }
 }
-/**
- * Create a screen preset with screen.
- *
- * @param options - The options to create a screen preset.
- */
-export function createScreenPreset(options: ScreenPreset.ScreenOptions): ScreenPreset
+
 /**
  * Create a screen preset with product options and local image.
  *

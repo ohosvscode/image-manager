@@ -9,7 +9,7 @@ import INI from 'ini'
 import { createDevice } from '../devices/device'
 import { createOuterDoubleScreen, createOuterScreen } from '../screens'
 import { createScreen } from '../screens/screen'
-import { createScreenPreset } from '../screens/screen-preset'
+import { ScreenPresetImpl } from '../screens/screen-preset'
 import { ImageBase } from './image'
 
 export interface LocalImage extends BaseImage, Stringifiable<LocalImage.Stringifiable> {
@@ -161,7 +161,7 @@ export class LocalImageImpl extends ImageBase<LocalImage.Stringifiable> implemen
       }
     }
 
-    const screenPreset = createScreenPreset({
+    const screenPreset = new ScreenPresetImpl({
       screen,
       productConfig,
       emulatorConfig: await this.getImageManager().getEmulatorConfig(),
