@@ -7,8 +7,32 @@ export interface ProductConfigItem<
   DeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,
   Name extends ProductConfigFile.GenericContent<DeviceType>['name'] = ProductConfigFile.GenericContent<DeviceType>['name'],
 > extends Serializable<ProductConfigItem.Serializable>, Omit<SerializableContent<ProductConfigFile.GenericContent<DeviceType, Name>>, 'toJSON'> {
+  /**
+   * Get the product config file of the product.
+   *
+   * @returns The product config file of the product.
+   */
   getProductConfigFile(): ProductConfigFile
+  /**
+   * Get the camel-case device type of the product.
+   *
+   * @returns The camel-case device type of the product.
+   */
   getDeviceType(): DeviceType
+  /**
+   * Get the dev model of the product.
+   *
+   * - `Phone` → `PHEMU-FD00`
+   * - `Foldable` → `PHEMU-FD01`
+   * - `WideFold` → `PHEMU-FD02`
+   * - `TripleFold` → `PHEMU-FD06`
+   * - `2in1 Foldable` → `PCEMU-FD05`
+   * - `Wearable` → `MCHEMU-AL00CN`
+   *
+   * Other cases will return `undefined`. It is very important to emulator to identify the device type.
+   * If the dev model is no correct the emulator screen and features maybe have some problems (e.g. the
+   * screen width and height is not correct、the foldable screen cannot be folded, etc.).
+   */
   getDevModel(): ProductConfigItem.DevModelWithString | undefined
 }
 
@@ -240,13 +264,12 @@ export namespace ProductConfigItem {
   export interface Serializable extends BaseSerializable<ProductConfigItem> {}
 
   export type DevModel
-    = 'MCHEMU-AL00CN'
-      | 'PHEMU-FD00'
-      | 'PHEMU-FD01'
-      | 'PHEMU-FD02'
-      | 'PHEMU-FD06'
-      | 'PCEMU-FD00'
-      | 'PCEMU-FD05'
+    = 'MCHEMU-AL00CN' // Wearable
+      | 'PHEMU-FD00' // Phone
+      | 'PHEMU-FD01' // Foldable
+      | 'PHEMU-FD02' // WideFold
+      | 'PCEMU-FD05' // 2in1 Foldable (Foldable)
+      | 'PHEMU-FD06' // TripleFold
 
   export type DevModelWithString = DevModel | (string & {})
 

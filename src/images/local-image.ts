@@ -1,4 +1,4 @@
-import type { EmulatorFile, ProductConfigFile, ProductConfigItem } from '../configs'
+import type { EmulatorFile, ProductConfigFile } from '../configs'
 import type { Device } from '../devices/device'
 import type { ImageManager } from '../image-manager'
 import type { ScreenPreset } from '../screen-preset'
@@ -108,12 +108,6 @@ export namespace LocalImage {
      */
     readonly screen: ScreenPreset.Options<ProductDeviceType, ProductName>
     /**
-     * The devModel.
-     *
-     * @example 'MCHEMU-AL00CN'
-     */
-    readonly devModel?: ProductConfigItem.DevModelWithString
-    /**
      * The vendor country.
      *
      * @example 'CN'
@@ -200,7 +194,7 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
         ? emulatorDeviceItem.getContent().coverDiagonalSize.toString()
         : undefined,
       'type': emulatorDeviceItem.getContent().deviceType,
-      'devModel': options.devModel,
+      'devModel': productConfigItem.getDevModel(),
       'model': productConfigItem.getContent().name,
     })
 

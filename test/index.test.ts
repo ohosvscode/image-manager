@@ -20,7 +20,7 @@ describe.sequential('image manager', (it) => {
     expect(imageManager).toBeDefined()
   })
 
-  it.skip('should get remote images, get local image and create device', async () => {
+  it.sequential('should get remote images, get local image and create device', async () => {
     const remoteImages = await imageManager.getDownloadedRemoteImages()
     if (remoteImages instanceof SDKList.SDKListError) throw remoteImages
     const remoteImage = remoteImages[0]
@@ -54,6 +54,10 @@ describe.sequential('image manager', (it) => {
     const namedIniFileContent = await device.getNamedIniFile().serialize()
     await expect(configIniFileContent).toMatchFileSnapshot('./fixtures/deployed/test/config.ini')
     await expect(namedIniFileContent).toMatchFileSnapshot('./fixtures/deployed/test.ini')
+    const newListsFile = await imageManager.readListsFile()
+    const count = newListsFile.getListsFileItems().filter(listsFileItem => listsFileItem.getContent().name === 'test').length
+    expect(count).toBe(1)
+    await device.delete()
   })
 
   it.sequential('should get deployed devices', async () => {
