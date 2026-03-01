@@ -1,4 +1,4 @@
-import type { ProductConfig } from './product-config'
+import type { ProductConfigFile } from './configs'
 
 export default {
   'Phone': [
@@ -397,4 +397,14 @@ export default {
       devModel: 'MCHEMU-AL00CN',
     },
   ],
-} satisfies ProductConfig as ProductConfig
+  'WearableKid': [
+    {
+      name: 'WearableKid',
+      screenWidth: '480',
+      screenHeight: '408',
+      screenDiagonal: '1.6',
+      screenDensity: '320',
+      visible: false,
+    },
+  ],
+} satisfies ProductConfigFile.Content

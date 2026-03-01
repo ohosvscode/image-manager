@@ -18,8 +18,7 @@ async function main() {
   const image = images[0]
   // Download the image
   const downloader = await image.createDownloader()
-  if (downloader instanceof RequestUrlError)
-    return console.error(downloader)
+  if (downloader instanceof RequestUrlError) return console.error(downloader)
 
   // Listen to the download and extract progress
   downloader.on('download-progress', progress => console.warn(progress))
@@ -31,8 +30,7 @@ async function main() {
   // When the download is complete, we can check the checksum
   const checksum = await downloader.checkChecksum()
   console.warn(`Checksum: ${checksum}`)
-  if (!checksum)
-    return console.error('Checksum is not valid')
+  if (!checksum) return console.error('Checksum is not valid')
 
   // Start extract the image
   await downloader.extract()
@@ -45,8 +43,7 @@ async function main() {
   // like `screenWidth`, `screenHeight`, `screenDiagonal`, `screenDensity`, etc.
   const productConfig = await image.getProductConfig()
   const mateBookFold = productConfig.find(item => item.name === 'MateBook Fold')
-  if (!mateBookFold)
-    throw new Error('MateBook Fold not found')
+  if (!mateBookFold) throw new Error('MateBook Fold not found')
 
   // Create the deployer
   const device = image.createDevice('MateBook Fold', createDeployedImageConfig(image))

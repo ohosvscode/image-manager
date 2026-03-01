@@ -1,305 +1,218 @@
-import type { LocalImage } from '../images'
-import type { Screen } from '../screens/screen'
-import type { ScreenPreset } from '../screens/screen-preset'
-import type { SnakecaseDeviceType } from '../types'
-import type { FullDeployedImageOptions } from './list'
-import { DeployError } from '../errors'
-import { ScreenPresetImpl } from '../screens/screen-preset'
+import type child_process from 'node:child_process'
+import type { Readable } from 'node:stream'
+import type { FileSystemWatcher } from 'vscode-fs'
+import type { ConfigIniFile, NamedIniFile, ProductConfigFile } from '../configs'
+import type { ListsFile, ListsFileItem } from '../configs/lists'
+import type { ImageManager } from '../image-manager'
+import type { ScreenPreset } from '../screen-preset'
+import type { BaseSerializable, Serializable } from '../types'
+import { fromByteArray } from 'base64-js'
+import { RelativePattern } from 'vscode-fs'
 
-export interface Device {
-  getOptions(): Device.Options
-  getScreen(): Screen
-  getScreenPreset(): ScreenPreset | undefined
-  getImage(): LocalImage
-  setUuid(uuid: Device.UUID): this
-  getUuid(): Device.UUID
-  buildList(): FullDeployedImageOptions
-  buildIni(): Record<string, string | undefined>
-  toIniString(): string
-  deploy(): Promise<void>
+export interface Device<
+  ProductDeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,
+  ProductName extends ProductConfigFile.GenericContent<ProductDeviceType>['name'] = ProductConfigFile.GenericContent<ProductDeviceType>['name'],
+> extends Serializable<Device.Serializable<ProductDeviceType, ProductName>> {
+  /** Get the screen of the device. */
+  getScreen(): ScreenPreset<ProductDeviceType, ProductName>
+  /** Get the image manager of the device. */
+  getImageManager(): ImageManager
+  /** Get the lists file of the device. */
+  getListsFile(): ListsFile
+  /** Get the lists file item of the device. */
+  getListsFileItem(): ListsFileItem
+  /** Get the config INI file of the device. */
+  getConfigIniFile(): ConfigIniFile<ProductDeviceType, ProductName>
+  /** Get the named INI file of the device. */
+  getNamedIniFile(): NamedIniFile<ProductDeviceType, ProductName>
+  /** Get the executable URI of the device. */
+  getExecutableUri(): import('vscode-uri').URI
+  /** Get the snapshot URI of the device. */
+  getSnapshotUri(): import('vscode-uri').URI
+  /** Get the snapshot base64 string of the device. */
+  getSnapshot(): Promise<string>
+  /** Get the start command of the device. */
+  getStartCommand(): [string, string[]]
+  /** Get the stop command of the device. */
+  getStopCommand(): [string, string[]]
+  /** Start the device. */
+  start(): Promise<child_process.ChildProcessByStdio<null, Readable, Readable>>
+  /** Stop the device. */
+  stop(): Promise<child_process.ChildProcessByStdio<null, Readable, Readable>>
+  /** Delete the device. */
   delete(): Promise<void>
-  isDeployed(): Promise<boolean>
-  toJSON(): Device.Stringifiable
+  /** Get the storage size of the device. */
+  getStorageSize(): Promise<number>
+  /**
+   * Get the watcher of the device.
+   *
+   * - If the watcher is already created, it will return the existing watcher.
+   * - If the watcher is disposed, it will create a new watcher.
+   * - If the watcher is already created but disposed, it will create a new watcher.
+   */
+  getWatcher(): Promise<FileSystemWatcher>
 }
 
 export namespace Device {
-  export type UUID = `${string}-${string}-${string}-${string}-${string}`
+  export interface Serializable<
+    ProductDeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,
+    ProductName extends ProductConfigFile.GenericContent<ProductDeviceType>['name'] = ProductConfigFile.GenericContent<ProductDeviceType>['name'],
+  > extends Omit<BaseSerializable<Device<ProductDeviceType, ProductName>>, 'imageManager'> {}
 
-  export interface Options {
-    name: string
-    cpuNumber: number
-    diskSize: number
-    memorySize: number
-    screen: Screen | ScreenPreset
-  }
-
-  export interface IniOptions {
-    /** @default CN */
-    vendorCountry?: string
-    /** @default true */
-    isPublic?: boolean
-    /** Override the ini options. */
-    overrides?: Record<string, string | undefined>
-  }
-
-  export interface Stringifiable extends Omit<Options, 'screen'> {
-    list: FullDeployedImageOptions
-    ini: Record<string, string | undefined>
+  export function is(value: unknown): value is Device {
+    return value instanceof DeviceImpl
   }
 }
 
-export class DeviceImpl implements Device {
-  private uuid: `${string}-${string}-${string}-${string}-${string}`
+export interface DeviceOptions<
+  ProductDeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,
+  ProductName extends ProductConfigFile.GenericContent<ProductDeviceType>['name'] = ProductConfigFile.GenericContent<ProductDeviceType>['name'],
+> {
+  readonly imageManager: ImageManager
+  readonly listsFile: ListsFile
+  readonly listFileItem: ListsFileItem
+  readonly screen: ScreenPreset<ProductDeviceType, ProductName>
+}
 
-  constructor(
-    private readonly image: LocalImage,
-    private readonly options: Device.Options,
-  ) {
-    this.uuid = image.getImageManager().getOptions().crypto.randomUUID()
+export class DeviceImpl<
+  ProductDeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,
+  ProductName extends ProductConfigFile.GenericContent<ProductDeviceType>['name'] = ProductConfigFile.GenericContent<ProductDeviceType>['name'],
+> implements Device<ProductDeviceType, ProductName> {
+  constructor(private readonly options: DeviceOptions<ProductDeviceType, ProductName>) {}
+
+  getScreen(): ScreenPreset<ProductDeviceType, ProductName> {
+    return this.options.screen
   }
 
-  getOptions(): Device.Options {
-    return this.options
+  getListsFile(): ListsFile {
+    return this.options.listsFile
   }
 
-  getImage(): LocalImage {
-    return this.image
+  getListsFileItem(): ListsFileItem {
+    return this.options.listFileItem
   }
 
-  getScreen(): Screen {
-    if (this.options.screen instanceof ScreenPresetImpl)
-      return this.options.screen.getScreen()
-    return this.options.screen as Screen
+  getImageManager(): ImageManager {
+    return this.options.imageManager
   }
 
-  getScreenPreset(): ScreenPreset | undefined {
-    if (this.options.screen instanceof ScreenPresetImpl)
-      return this.options.screen
-    return undefined
-  }
+  private _configIniFile: ConfigIniFile<ProductDeviceType, ProductName>
 
-  setUuid(uuid: Device.UUID): this {
-    this.uuid = uuid
+  setConfigIniFile(configIniFile: ConfigIniFile<ProductDeviceType, ProductName>): this {
+    this._configIniFile = configIniFile
     return this
   }
 
-  getUuid(): Device.UUID {
-    return this.uuid
+  getConfigIniFile(): ConfigIniFile<ProductDeviceType, ProductName> {
+    return this._configIniFile
   }
 
-  private cachedList: FullDeployedImageOptions | null = null
+  private _namedIniFile: NamedIniFile<ProductDeviceType, ProductName>
 
-  setCachedList(list: FullDeployedImageOptions): this {
-    this.cachedList = list
+  getNamedIniFile(): NamedIniFile<ProductDeviceType, ProductName> {
+    return this._namedIniFile
+  }
+
+  setNamedIniFile(namedIniFile: NamedIniFile<ProductDeviceType, ProductName>): this {
+    this._namedIniFile = namedIniFile
     return this
   }
 
-  private cachedIni: Record<string, string | undefined> | null = null
-
-  setCachedIni(ini: Record<string, string | undefined>): this {
-    this.cachedIni = ini
-    return this
+  getExecutableUri(): import('vscode-uri').URI {
+    const { emulatorPath, adapter: { join, process } } = this.getImageManager().getOptions()
+    return join(emulatorPath, process.platform === 'win32' ? 'Emulator.exe' : 'Emulator')
   }
 
-  buildList(): FullDeployedImageOptions {
-    if (this.cachedList)
-      return this.cachedList
-
-    const { path, deployedPath, imageBasePath, configPath, logPath } = this.image.getImageManager().getOptions()
-    const screen = this.getScreen()
-
-    const list: FullDeployedImageOptions = {
-      'name': this.options.name,
-      'apiVersion': this.image.getApiVersion(),
-      'cpuNumber': this.options.cpuNumber.toFixed(),
-      'diagonalSize': screen.getDiagonal().toFixed(2),
-      'resolutionHeight': screen.getHeight().toFixed(),
-      'resolutionWidth': screen.getWidth().toFixed(),
-      'density': screen.getDensity().toFixed(),
-      'memoryRamSize': this.options.memorySize.toFixed(),
-      'dataDiskSize': this.options.diskSize.toFixed(),
-      'path': path.resolve(deployedPath, this.options.name),
-      'type': this.image.getSnakecaseDeviceType() as SnakecaseDeviceType,
-      'uuid': this.uuid,
-      'version': this.image.getVersion(),
-      'imageDir': this.image.getPath().split(',').join(path.sep) + path.sep,
-      'showVersion': `${this.image.getTargetOS()} ${this.image.getTargetVersion()}(${this.image.getApiVersion()})`,
-      'harmonyos.sdk.path': imageBasePath,
-      'harmonyos.config.path': configPath,
-      'harmonyos.log.path': logPath,
-      'hw.apiName': this.image.getTargetVersion(),
-      'abi': this.image.getArch(),
-      'harmonyOSVersion': `${this.image.getTargetOS()}-${this.image.getTargetVersion()}`,
-      'guestVersion': `${this.image.getTargetOS()} ${this.image.getVersion()}(${this.image.getReleaseType()})`,
-    }
-
-    if (this.options.screen instanceof ScreenPresetImpl) {
-      const productConfig = this.options.screen.getProductPreset()?.getProductConfig()
-
-      if (productConfig?.devModel)
-        list.devModel = productConfig.devModel
-
-      if (productConfig?.name)
-        list.model = productConfig.name
-    }
-
-    return list
+  getSnapshotUri(): import('vscode-uri').URI {
+    const { deployedPath, adapter: { join } } = this.getImageManager().getOptions()
+    return join(deployedPath, this.getListsFileItem().getContent().name, 'Snapshot.png')
   }
 
-  buildIni(options: Device.IniOptions = {}): Record<string, string | undefined> {
-    if (this.cachedIni)
-      return this.cachedIni
-
-    const listConfig = this.buildList()
-    const screen = this.getScreen()
-    const is2in1Foldable = listConfig.type === '2in1_foldable'
-    const screenPreset = this.options.screen instanceof ScreenPresetImpl ? this.options.screen.getProductPreset() : null
-    const productConfig = screenPreset?.getProductConfig()
-    const hasOuterScreen = is2in1Foldable && productConfig?.outerScreenWidth != null && productConfig?.outerScreenHeight != null && productConfig?.outerScreenDiagonal != null
-
-    // 2in1 折叠屏：single=外屏(折叠)，double=主屏(展开)；非 2in1 或无 outer 时 single=主屏，number=1
-    const useDualScreen = hasOuterScreen
-    const singleDiagonal = useDualScreen ? productConfig!.outerScreenDiagonal! : screen.getDiagonal().toString()
-    const singleHeight = useDualScreen ? productConfig!.outerScreenHeight! : screen.getHeight().toString()
-    const singleWidth = useDualScreen ? productConfig!.outerScreenWidth! : screen.getWidth().toString()
-    const doubleDiagonal = useDualScreen ? productConfig!.screenDiagonal : undefined
-    const doubleHeight = useDualScreen ? productConfig!.screenHeight : undefined
-    const doubleWidth = useDualScreen ? productConfig!.screenWidth : undefined
-
-    const ini: Record<string, string | undefined> = {
-      'name': listConfig.name,
-      'deviceType': listConfig.type,
-      'deviceModel': listConfig.devModel,
-      'productModel': listConfig.model,
-      'vendorCountry': options.vendorCountry ?? 'CN',
-      'uuid': this.uuid,
-      'configPath': listConfig['harmonyos.config.path'],
-      'logPath': listConfig['harmonyos.log.path'],
-      'sdkPath': listConfig['harmonyos.sdk.path'],
-      'imageSubPath': listConfig.imageDir,
-      'instancePath': listConfig.path,
-      'os.osVersion': `${this.image.getTargetOS()} ${this.image.getTargetVersion()}(${this.image.getApiVersion()})`,
-      'os.apiVersion': this.image.getApiVersion(),
-      'os.softwareVersion': this.image.getVersion(),
-      'os.isPublic': (options.isPublic ?? true) ? 'true' : 'false',
-      'hw.cpu.arch': listConfig.abi,
-      'hw.cpu.ncore': listConfig.cpuNumber,
-      'hw.lcd.density': screen.getDensity().toFixed(),
-      'hw.lcd.single.diagonalSize': singleDiagonal,
-      'hw.lcd.single.height': singleHeight,
-      'hw.lcd.single.width': singleWidth,
-      'hw.lcd.number': useDualScreen ? '2' : '1',
-      'hw.ramSize': listConfig.memoryRamSize,
-      'hw.dataPartitionSize': listConfig.dataDiskSize,
-      'isCustomize': screenPreset ? 'false' : 'true',
-      'hw.hdc.port': 'notset',
-      ...options.overrides,
-    }
-
-    if (useDualScreen && doubleDiagonal != null && doubleHeight != null && doubleWidth != null) {
-      ini['hw.lcd.double.diagonalSize'] = doubleDiagonal
-      ini['hw.lcd.double.height'] = doubleHeight
-      ini['hw.lcd.double.width'] = doubleWidth
-    }
-
-    // 非 2in1 双屏时，部分模拟器版本用 hw.phy 表示外屏像素；2in1 双屏时与 hw.lcd.single 一致，可省略
-    if (screenPreset && productConfig && !useDualScreen) {
-      if (productConfig.outerScreenHeight)
-        ini['hw.phy.height'] = productConfig.outerScreenHeight
-      if (productConfig.outerScreenWidth)
-        ini['hw.phy.width'] = productConfig.outerScreenWidth
-    }
-
-    return ini
+  async getSnapshot(): Promise<string> {
+    const snapshotUri = this.getSnapshotUri()
+    const { adapter: { fs } } = this.getImageManager().getOptions()
+    const snapshot = await fs.readFile(snapshotUri)
+    return fromByteArray(snapshot)
   }
 
-  toIniString(): string {
-    return `${Object.entries(this.buildIni())
-      .filter(([, value]) => value !== undefined && value !== null)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('\n')}\n`
+  getStartCommand(): [string, string[]] {
+    const listFileItemContent = this.getListsFileItem().getContent()
+    const executableUri = this.getExecutableUri()
+    return [
+      executableUri.fsPath,
+      [
+        '-hvd',
+        listFileItemContent.name,
+        '-path',
+        this.getImageManager().getOptions().deployedPath.fsPath,
+        '-imageRoot',
+        this.getImageManager().getOptions().imageBasePath.fsPath,
+      ],
+    ]
   }
 
-  buildDeviceIni(): Record<string, string | undefined> {
-    return {
-      'hvd.ini.encoding': 'UTF-8',
-      'path': this.buildList().path,
-    }
+  async start(): Promise<child_process.ChildProcessByStdio<null, Readable, Readable>> {
+    const { emulatorPath, adapter: { child_process } } = this.getImageManager().getOptions()
+    const [executableUri, args] = this.getStartCommand()
+    return child_process.spawn(executableUri, args, { cwd: emulatorPath.fsPath, stdio: ['ignore', 'pipe', 'pipe'] })
   }
 
-  buildDeviceIniString(): string {
-    return `${Object.entries(this.buildDeviceIni())
-      .filter(([, value]) => value !== undefined && value !== null)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('\n')}\n`
+  getStopCommand(): [string, string[]] {
+    const listFileItemContent = this.getListsFileItem().getContent()
+    const executableUri = this.getExecutableUri()
+    return [executableUri.fsPath, ['-stop', listFileItemContent.name]]
   }
 
-  async deploy(): Promise<void> {
-    if (await this.isDeployed())
-      throw new DeployError(DeployError.Code.DEVICE_ALREADY_DEPLOYED, `Image ${this.options.name} already deployed`)
-
-    const { fs, path, deployedPath } = this.image.getImageManager().getOptions()
-
-    if (!fs.existsSync(deployedPath))
-      fs.mkdirSync(deployedPath, { recursive: true })
-
-    const listsPath = path.join(deployedPath, 'lists.json')
-    const listConfig = this.buildList()
-
-    if (!fs.existsSync(listsPath))
-      return fs.writeFileSync(listsPath, JSON.stringify([listConfig], null, 2))
-    const lists: FullDeployedImageOptions[] = JSON.parse(fs.readFileSync(listsPath, 'utf-8')) ?? []
-    if (!Array.isArray(lists))
-      throw new DeployError(DeployError.Code.LIST_JSON_NOT_AN_ARRAY, 'Lists is not an array')
-    if (lists.find(item => item.name === listConfig.name))
-      throw new DeployError(DeployError.Code.DEVICE_ALREADY_DEPLOYED, `Image ${listConfig.name} already deployed in lists.json`)
-    lists.push(listConfig)
-
-    // Write config.ini
-    fs.mkdirSync(listConfig.path, { recursive: true })
-    fs.writeFileSync(path.join(listConfig.path, 'config.ini'), this.toIniString())
-
-    // write device info's ini file
-    fs.writeFileSync(path.join(deployedPath, `${this.options.name}.ini`), this.buildDeviceIniString())
-
-    // Write lists.json
-    fs.writeFileSync(listsPath, JSON.stringify(lists, null, 2))
+  async stop(): Promise<child_process.ChildProcessByStdio<null, Readable, Readable>> {
+    const { emulatorPath, adapter: { child_process } } = this.getImageManager().getOptions()
+    const [executableUri, args] = this.getStopCommand()
+    return child_process.spawn(executableUri, args, { cwd: emulatorPath.fsPath, stdio: ['ignore', 'pipe', 'pipe'] })
   }
 
   async delete(): Promise<void> {
-    const { fs, path, deployedPath } = this.image.getImageManager().getOptions()
-    const listsPath = path.join(deployedPath, 'lists.json')
-    if (!fs.existsSync(listsPath) || !fs.statSync(listsPath).isFile())
-      throw new Error('Lists file not found')
+    const { deployedPath, adapter: { join, fs } } = this.getImageManager().getOptions()
 
-    const lists: FullDeployedImageOptions[] = JSON.parse(fs.readFileSync(listsPath, 'utf-8')) ?? []
-    const index = lists.findIndex(item => item.name === this.options.name)
-    if (index === -1)
-      throw new Error(`Device ${this.options.name} not found`)
-    lists.splice(index, 1)
-    fs.writeFileSync(listsPath, JSON.stringify(lists, null, 2))
-    fs.rmSync(path.resolve(this.buildList().path), { recursive: true })
-    fs.rmSync(path.resolve(deployedPath, `${this.options.name}.ini`))
+    await Promise.allSettled([
+      fs.delete(join(deployedPath, this.getListsFileItem().getContent().name), { recursive: true }),
+      fs.delete(join(deployedPath, `${this.getListsFileItem().getContent().name}.ini`), { recursive: false }),
+      this.getImageManager().readListsFile().then(
+        async (listsFile) => {
+          const listsFileItem = listsFile.getListsFileItems().find((item) => {
+            return item.getContent().name === this.getListsFileItem().getContent().name
+          })
+          if (!listsFileItem) return
+          await listsFile.deleteListsFileItem(listsFileItem).write()
+        },
+      ),
+    ])
   }
 
-  async isDeployed(): Promise<boolean> {
-    const { fs, path, deployedPath } = this.image.getImageManager().getOptions()
-    const listsPath = path.join(deployedPath, 'lists.json')
-    if (!fs.existsSync(listsPath) || !fs.statSync(listsPath).isFile())
-      return false
-    const lists: FullDeployedImageOptions[] = JSON.parse(fs.readFileSync(listsPath, 'utf-8')) ?? []
-    return lists.some(item => item.name === this.options.name && fs.existsSync(path.resolve(item.path, 'config.ini')))
+  async getStorageSize(): Promise<number> {
+    const { deployedPath, adapter: { join, fs } } = this.getImageManager().getOptions()
+    const storageSize = await fs.stat(join(deployedPath, this.getListsFileItem().getContent().name))
+    return storageSize.size
   }
 
-  toJSON(): Device.Stringifiable {
+  private _watcher?: FileSystemWatcher
+
+  async getWatcher(): Promise<FileSystemWatcher> {
+    if (this._watcher && !this._watcher.isDisposed) return this._watcher
+    const { deployedPath, adapter: { fs, join } } = this.getImageManager().getOptions()
+    this._watcher = await fs.createWatcher(new RelativePattern(join(deployedPath, this.getListsFileItem().getContent().name), '**'))
+    return this._watcher
+  }
+
+  toJSON(): Device.Serializable<ProductDeviceType, ProductName> {
     return {
-      ...this.options,
-      list: this.buildList(),
-      ini: this.buildIni(),
+      screen: this.getScreen(),
+      listsFile: this.getListsFile().toJSON(),
+      listsFileItem: this.getListsFileItem().toJSON(),
+      configIniFile: this.getConfigIniFile().toJSON(),
+      namedIniFile: this.getNamedIniFile().toJSON(),
+      executableUri: this.getExecutableUri().toJSON(),
+      snapshotUri: this.getSnapshotUri().toJSON(),
+      startCommand: this.getStartCommand(),
+      stopCommand: this.getStopCommand(),
     }
   }
-}
-
-export function createDevice(image: LocalImage, options: Device.Options): Device {
-  return new DeviceImpl(image, options)
 }

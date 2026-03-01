@@ -8,3 +8,5 @@ test/fixtures/deployed/**
 !test/fixtures/deployed/.gitkeep
 test/fixtures/emulator/**
 !test/fixtures/emulator/.gitkeep
+*.log
+*.zip

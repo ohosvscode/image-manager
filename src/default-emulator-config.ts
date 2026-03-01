@@ -1,4 +1,4 @@
-import type { EmulatorConfig } from './emulator-config'
+import type { EmulatorFile } from './configs/emulator/emulator'
 
 export default [
   {
@@ -801,4 +801,4 @@ export default [
     procNumber: 4,
     api: 22,
   },
-] satisfies EmulatorConfig as EmulatorConfig
+] satisfies EmulatorFile.Content

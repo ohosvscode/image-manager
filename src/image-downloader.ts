@@ -1,234 +1,308 @@
-import type { AxiosProgressEvent, AxiosResponse } from 'axios'
-import type { Emitter, EventHandlerMap, Handler } from 'mitt'
-import type Stream from 'node:stream'
-import type { BaseImage } from './images/image'
-import type { LocalImageImpl } from './images/local-image'
-import type { RemoteImageImpl } from './images/remote-image'
-import axios, { AxiosError } from 'axios'
-import mitt from 'mitt'
-import progress from 'progress-stream'
+import type { AxiosResponse } from 'axios'
+import type { Hash } from 'node:crypto'
+import type { Readable } from 'node:stream'
+import type { Event } from './event-emitter'
+import type { RemoteImage } from './images'
+import { WriteableFlags } from 'vscode-fs'
+import { EventEmitter } from './event-emitter'
 
-export interface ImageDownloadProgressEvent extends AxiosProgressEvent {
-  /**
-   * The network speed of the download.
-   */
-  network: number
-  /**
-   * The unit of the network speed.
-   */
-  unit: 'KB' | 'MB'
-  /**
-   * The increment of the {@linkcode ImageDownloadProgressEvent.percentage}.
-   */
-  increment: number
-}
-
-export interface ExtractProgressEvent extends progress.Progress {}
-
-// eslint-disable-next-line ts/consistent-type-definitions
-export type ImageDownloadEventMap = {
-  'download-progress': ImageDownloadProgressEvent
-  'extract-progress': ExtractProgressEvent
-}
-
-export interface ImageDownloader<T extends BaseImage> extends Emitter<ImageDownloadEventMap> {
-  /**
-   * Start downloading the image.
-   *
-   * @param signal - The abort signal.
-   */
-  startDownload(signal?: AbortSignal): Promise<void>
-  /**
-   * Check the checksum of the image.
-   *
-   * @param signal - The abort signal.
-   */
-  checkChecksum(signal?: AbortSignal): Promise<boolean>
-  /**
-   * Extract the image.
-   *
-   * @param signal - The abort signal.
-   * @param symlinkOpenHarmonySdk - If true, symlink the OpenHarmony SDK to the image. Default is `true`.
-   */
-  extract(signal?: AbortSignal, symlinkOpenHarmonySdk?: boolean): Promise<void>
-  /**
-   * Clean the cache of the image.
-   */
-  clean(): Promise<void>
-  /**
-   * Get the image.
-   */
-  getImage(): T
-  /**
-   * Get the URL of the image.
-   */
+export interface ImageDownloader {
+  getRemoteImage(): RemoteImage
   getUrl(): string
+  getCacheUri(): import('vscode-uri').URI
+  startDownload(): Promise<void>
+  checkChecksum(): Promise<boolean>
+  extract(): Promise<void>
+  onDownloadProgress: Event<ImageDownloader.DownloadProgress>
+  onExtractProgress: Event<ImageDownloader.ExtractProgress>
+  onChecksumProgress: Event<ImageDownloader.ChecksumProgress>
 }
 
-class ImageDownloaderImpl<T extends LocalImageImpl | RemoteImageImpl> implements ImageDownloader<T> {
-  private readonly emitter = mitt<ImageDownloadEventMap>()
-  public readonly all: EventHandlerMap<ImageDownloadEventMap> = this.emitter.all
+export namespace ImageDownloader {
+  export type ProgressType = 'download' | 'extract'
 
-  on(type: string, handler: unknown): void {
-    this.emitter.on(type as keyof ImageDownloadEventMap, handler as Handler<ImageDownloadEventMap[keyof ImageDownloadEventMap]>)
+  export interface BaseProgress {
+    /** Relative progress increment since last report, 0~100. */
+    increment: number
+    /** Cureent progress, 0~100. */
+    progress: number
   }
 
-  off(type: unknown, handler?: unknown): void {
-    this.emitter.off(type as keyof ImageDownloadEventMap, handler as Handler<ImageDownloadEventMap[keyof ImageDownloadEventMap]>)
+  export interface DownloadProgress extends BaseProgress {
+    progressType: 'download'
+    /** Current network speed. */
+    network: number
+    /** Current network speed unit, 'KB' or 'MB'. */
+    unit: 'KB' | 'MB'
+    /**
+     * When true, indicates resume from a previous session. Consumer should set
+     * accumulated progress to this event's `progress` instead of adding `increment`.
+     */
+    reset?: boolean
   }
 
-  emit(type: unknown, event?: unknown): void {
-    this.emitter.emit(type as keyof ImageDownloadEventMap, event as ImageDownloadEventMap[keyof ImageDownloadEventMap])
+  export interface ExtractProgress extends BaseProgress {
+    progressType: 'extract'
   }
 
+  export interface ChecksumProgress extends BaseProgress {
+    progressType: 'checksum'
+  }
+}
+
+export class ImageDownloaderImpl implements ImageDownloader {
   constructor(
-    private readonly image: T,
+    private readonly remoteImage: RemoteImage,
     private readonly url: string,
+    private readonly abortController = new AbortController(),
   ) {}
 
-  getImage(): T {
-    return this.image
+  private readonly downloadProgressEmitter = new EventEmitter<ImageDownloader.DownloadProgress>()
+  private readonly extractProgressEmitter = new EventEmitter<ImageDownloader.ExtractProgress>()
+  private readonly checksumProgressEmitter = new EventEmitter<ImageDownloader.ChecksumProgress>()
+
+  onDownloadProgress: Event<ImageDownloader.DownloadProgress> = this.downloadProgressEmitter.event
+  onExtractProgress: Event<ImageDownloader.ExtractProgress> = this.extractProgressEmitter.event
+  onChecksumProgress: Event<ImageDownloader.ChecksumProgress> = this.checksumProgressEmitter.event
+
+  getRemoteImage(): RemoteImage {
+    return this.remoteImage
   }
 
   getUrl(): string {
     return this.url
   }
 
-  getCacheFsPath(): string {
-    const { path, cachePath } = this.image.getImageManager().getOptions()
-    return path.resolve(cachePath, path.basename(this.url))
+  getCacheUri(): import('vscode-uri').URI {
+    const { cachePath, adapter: { URI, join, basename } } = this.remoteImage.getImageManager().getOptions()
+    return join(cachePath, basename(URI.parse(this.url)))
   }
 
-  private async makeRequest(signal?: AbortSignal, startByte: number = 0, retried416 = false): Promise<AxiosResponse<Stream.Readable>> {
-    const { fs } = this.image.getImageManager().getOptions()
-    const cacheFsPath = this.getCacheFsPath()
-    const transformProgress = this.createProgressTransformer(startByte)
+  private async makeRequest(startByte: number = 0, retried416 = false): Promise<AxiosResponse<Readable>> {
+    const { adapter: { fs, axios, isAxiosError } } = this.remoteImage.getImageManager().getOptions()
+    const cacheUri = this.getCacheUri()
 
     try {
-      return await axios.get<Stream.Readable>(this.url, {
+      return await axios.get<Readable>(this.url, {
         headers: startByte > 0 ? { Range: `bytes=${startByte}-` } : {},
         responseType: 'stream',
         validateStatus: status => (status === 200 || status === 206),
-        onDownloadProgress: progress => this.emit('download-progress', transformProgress(progress)),
-        signal,
+        signal: this.abortController.signal,
       })
     }
     catch (err) {
-      if (err instanceof AxiosError && err.response?.status === 416 && !retried416) {
-        if (fs.existsSync(cacheFsPath))
-          fs.rmSync(cacheFsPath, { force: true })
-        return this.makeRequest(signal, startByte, true)
+      if (isAxiosError(err) && err.response?.status === 416 && !retried416) {
+        if (await fs.exists(cacheUri)) await fs.delete(cacheUri, { recursive: true })
+        return this.makeRequest(startByte, true)
       }
       throw err
     }
   }
 
-  async startDownload(signal?: AbortSignal, retried416 = false): Promise<void> {
-    const { fs, cachePath } = this.image.getImageManager().getOptions()
-    const cacheFsPath = this.getCacheFsPath()
-    if (!fs.existsSync(cachePath))
-      fs.mkdirSync(cachePath, { recursive: true })
-    const startByte = fs.existsSync(cacheFsPath) ? fs.statSync(cacheFsPath).size : 0
-    const response = await this.makeRequest(signal, startByte, retried416)
-    const isPartialContent = response.status === 206
-    const start = (startByte > 0 && isPartialContent) ? startByte : 0
-    const flags = start > 0 ? 'a' : 'w'
-    if (startByte > 0 && !isPartialContent)
-      fs.rmSync(cacheFsPath, { force: true })
-    const writeStream = fs.createWriteStream(cacheFsPath, { flags, start })
-    response.data.pipe(writeStream)
-    await new Promise<void>((resolve, reject) => {
-      let settled = false
-      const onError = (err: Error) => {
-        if (settled)
-          return
-        settled = true
-        response.data.destroy()
-        writeStream.destroy()
-        reject(err)
+  /** 获取文件总大小。206 时从 Content-Range 取 total，200 时从 Content-Length 取。 */
+  private parseTotalBytes(response: AxiosResponse<Readable>): number | null {
+    const contentRange = response.headers['content-range']
+    if (contentRange) {
+      const match = contentRange.match(/bytes \d+-\d+\/(\d+)/)
+      if (match) return Number.parseInt(match[1], 10)
+    }
+    const contentLength = response.headers['content-length']
+    if (contentLength) return Number.parseInt(contentLength, 10)
+    return null
+  }
+
+  private createDownloadProgressTransformer(startByte: number, totalBytes: number | null): TransformStream<Uint8Array, Uint8Array> {
+    let receivedBytes = startByte
+    let lastReportedBytes = startByte
+    let lastReportedProgress = totalBytes != null && totalBytes > 0
+      ? Math.round((startByte / totalBytes) * 10000) / 100
+      : 0
+    let lastReportTime = performance.now()
+    const reportThreshold = 64 * 1024 // 每 64KB 上报一次，确保 progress 有可见变化
+
+    const report = () => {
+      const now = performance.now()
+      const bytesSinceLastReport = receivedBytes - lastReportedBytes
+      const timeDeltaSec = (now - lastReportTime) / 1000
+      lastReportedBytes = receivedBytes
+      lastReportTime = now
+
+      const progress = totalBytes != null && totalBytes > 0
+        ? Math.min(100, Math.round((receivedBytes / totalBytes) * 10000) / 100)
+        : 0
+      const increment = Math.round((progress - lastReportedProgress) * 100) / 100
+      lastReportedProgress = progress
+
+      // 实时速度：bytesSinceLastReport / timeDeltaSec，单位 KB/s 或 MB/s
+      const speedKBps = timeDeltaSec > 0 && bytesSinceLastReport > 0
+        ? (bytesSinceLastReport / 1024) / timeDeltaSec
+        : 0
+      const unit: 'KB' | 'MB' = speedKBps >= 1024 ? 'MB' : 'KB'
+      const network = unit === 'MB' ? speedKBps / 1024 : speedKBps
+
+      const roundedProgress = Math.round(progress * 100) / 100
+      const clampedIncrement = Math.max(0, Math.min(100, increment))
+      if (clampedIncrement > 0) {
+        this.downloadProgressEmitter.fire({
+          progressType: 'download',
+          increment: clampedIncrement,
+          progress: roundedProgress,
+          network: Math.round(network * 100) / 100,
+          unit,
+        })
       }
-      const onFinish = () => {
-        if (settled)
-          return
-        settled = true
-        resolve()
-      }
-      response.data.on('error', onError)
-      writeStream.on('error', onError)
-      response.data.on('end', () => writeStream.end())
-      writeStream.on('finish', onFinish)
+    }
+
+    return new TransformStream({
+      transform: (chunk, controller) => {
+        receivedBytes += chunk.length
+        controller.enqueue(chunk)
+        if (receivedBytes - lastReportedBytes >= reportThreshold) report()
+      },
+      flush: () => {
+        if (receivedBytes !== lastReportedBytes) report()
+      },
     })
   }
 
-  async checkChecksum(signal?: AbortSignal): Promise<boolean> {
-    const { crypto, fs } = this.image.getImageManager().getOptions()
-    const checksum = this.image.getChecksum()
-    const hash = crypto.createHash('sha256', { signal })
-    const stream = fs.createReadStream(this.getCacheFsPath(), { signal })
-    stream.on('data', (chunk: Uint8Array) => hash.update(chunk))
-    await new Promise<void>((resolve, reject) => stream.on('end', resolve).on('error', reject))
-    const calculatedChecksum = hash.digest('hex')
-    return calculatedChecksum === checksum
-  }
+  async startDownload(retried416: boolean = false): Promise<void> {
+    const { adapter: { fs, toWeb, dirname } } = this.remoteImage.getImageManager().getOptions()
+    const cacheUri = this.getCacheUri()
+    if (!await fs.exists(dirname(cacheUri))) await fs.createDirectory(dirname(cacheUri))
+    const startByte = await fs.stat(cacheUri).then(
+      stat => stat.size ?? 0,
+      () => 0,
+    )
+    const response = await this.makeRequest(startByte, retried416)
+    const totalBytes = this.parseTotalBytes(response)
 
-  async extract(signal?: AbortSignal, symlinkOpenHarmonySdk: boolean = true): Promise<void> {
-    const unzipper = await import('unzipper')
-
-    const { fs, path, imageBasePath, sdkPath } = this.image.getImageManager().getOptions()
-    const cacheFsPath = this.getCacheFsPath()
-    const stream = fs.createReadStream(cacheFsPath, { signal })
-    const progressStream = progress({ length: fs.statSync(cacheFsPath).size })
-    const extractStream = unzipper.Extract({ path: this.image.getFsPath() })
-    progressStream.on('progress', progress => this.emitter.emit('extract-progress', progress))
-    stream.pipe(progressStream).pipe(extractStream)
-    await extractStream.promise()
-    if (symlinkOpenHarmonySdk) {
-      // 模拟器通过 harmonyos.sdk.path（即 imageBasePath）查找 default/openharmony，必须建在此处
-      const symlinkSdkPath = path.resolve(imageBasePath, 'default', 'openharmony')
-      if (!fs.existsSync(path.dirname(symlinkSdkPath)))
-        fs.mkdirSync(path.dirname(symlinkSdkPath), { recursive: true })
-      if (!fs.existsSync(symlinkSdkPath))
-        fs.symlinkSync(sdkPath, symlinkSdkPath, 'dir')
+    // Emit reset event on resume so consumer can sync accumulated progress
+    if (startByte > 0 && totalBytes != null && totalBytes > 0) {
+      const startProgress = Math.round((startByte / totalBytes) * 10000) / 100
+      this.downloadProgressEmitter.fire({
+        progressType: 'download',
+        increment: 0,
+        progress: Math.min(100, startProgress),
+        network: 0,
+        unit: 'KB',
+        reset: true,
+      })
     }
+
+    const writableStream = await fs.createWritableStream(
+      cacheUri,
+      startByte > 0 ? { flags: WriteableFlags.Append } : undefined,
+    )
+    const webReadable = toWeb(response.data) as ReadableStream<Uint8Array>
+    const progressTransform = this.createDownloadProgressTransformer(startByte, totalBytes)
+    await webReadable.pipeThrough(progressTransform).pipeTo(writableStream)
   }
 
-  async clean(): Promise<void> {
-    const { fs } = this.image.getImageManager().getOptions()
-    const cacheFsPath = this.getCacheFsPath()
-    if (fs.existsSync(cacheFsPath))
-      fs.rmSync(cacheFsPath, { recursive: true })
-  }
+  private createChecksumProgressTransformer(totalBytes: number, hash: Hash): TransformStream<Uint8Array, Uint8Array> {
+    let readBytes = 0
+    let lastReportedBytes = 0
+    let lastReportedProgress = 0
+    const reportThreshold = 64 * 1024
 
-  private createProgressTransformer(startByte: number): (progress: AxiosProgressEvent) => ImageDownloadProgressEvent {
-    let previousPercentage = 0
-    const bytesPerKB = 1024
-    const bytesPerMB = bytesPerKB * 1024
-
-    return (progress) => {
-      const rangeTotal = progress.total ?? 0
-      const rangeLoaded = progress.loaded ?? 0
-      const total = startByte + rangeTotal
-      const loaded = startByte + rangeLoaded
-      const percentage = total > 0 ? (loaded / total) * 100 : 0
-      const increment = Math.max(0, percentage - previousPercentage)
-      previousPercentage = percentage
-
-      const rate = progress.rate ?? 0
-      const unit: 'KB' | 'MB' = rate >= bytesPerMB ? 'MB' : 'KB'
-      const network = unit === 'MB' ? rate / bytesPerMB : rate / bytesPerKB
-
-      return {
-        ...progress,
-        total,
-        loaded,
-        network,
-        unit,
-        increment,
+    const report = () => {
+      const progress = totalBytes > 0 ? Math.min(100, Math.round((readBytes / totalBytes) * 10000) / 100) : 0
+      const increment = Math.round((progress - lastReportedProgress) * 100) / 100
+      lastReportedBytes = readBytes
+      lastReportedProgress = progress
+      const clampedIncrement = Math.max(0, Math.min(100, increment))
+      if (clampedIncrement > 0) {
+        this.checksumProgressEmitter.fire({
+          progressType: 'checksum',
+          increment: clampedIncrement,
+          progress: Math.round(progress * 100) / 100,
+        })
       }
     }
-  }
-}
 
-export function createImageDownloader<T extends LocalImageImpl | RemoteImageImpl>(image: T, url: string): ImageDownloader<T> {
-  return new ImageDownloaderImpl<T>(image, url)
+    return new TransformStream({
+      transform: (chunk, controller) => {
+        const chunkLength = chunk ? (chunk.byteLength ?? chunk.length ?? 0) : 0
+        if (chunk) hash.update(chunk)
+        readBytes += chunkLength
+        controller.enqueue(chunk)
+        if (readBytes - lastReportedBytes >= reportThreshold) report()
+      },
+      flush: () => {
+        if (readBytes !== lastReportedBytes) report()
+      },
+    })
+  }
+
+  async checkChecksum(): Promise<boolean> {
+    const { adapter: { fs, crypto } } = this.remoteImage.getImageManager().getOptions()
+    const cacheUri = this.getCacheUri()
+    const totalBytes = await fs.stat(cacheUri).then(stat => stat.size ?? 0, () => 0)
+    const readableStream = await fs.createReadableStream(cacheUri)
+    const hash = crypto.createHash('sha256')
+    const progressTransform = this.createChecksumProgressTransformer(totalBytes, hash)
+    await readableStream.pipeThrough(progressTransform).pipeTo(new WritableStream(), { signal: this.abortController.signal })
+    const checksum = hash.digest('hex')
+    return checksum === this.getRemoteImage().getRemoteImageSDK().archive?.complete?.checksum
+  }
+
+  async extract(): Promise<void> {
+    const { adapter: { fs, unzipper, fromWeb } } = this.remoteImage.getImageManager().getOptions()
+    const cacheUri = this.getCacheUri()
+    const totalBytes = await fs.stat(cacheUri).then(stat => stat.size ?? 0, () => 0)
+
+    const extract = unzipper.Extract({ path: this.getRemoteImage().getFullPath().fsPath })
+    const webReadable = await fs.createReadableStream(cacheUri)
+
+    let readBytes = 0
+    let lastReportedBytes = 0
+    let lastReportedProgress = 0
+    const reportThreshold = 64 * 1024
+
+    // 使用 Web TransformStream：复制 chunk 避免 buffer 复用，纯 Uint8Array 无 Buffer/Transform 依赖
+    const copyAndProgressTransform = new TransformStream<Uint8Array, Uint8Array>({
+      transform: (chunk, controller) => {
+        const chunkLength = chunk?.length ?? 0
+        if (chunkLength <= 0) return
+        readBytes += chunkLength
+        if (readBytes - lastReportedBytes >= reportThreshold) {
+          const progress = totalBytes > 0 ? Math.min(100, Math.round((readBytes / totalBytes) * 10000) / 100) : 0
+          const increment = Math.round((progress - lastReportedProgress) * 100) / 100
+          lastReportedBytes = readBytes
+          lastReportedProgress = progress
+          const clampedIncrement = Math.max(0, Math.min(100, increment))
+          if (clampedIncrement > 0) {
+            this.extractProgressEmitter.fire({
+              progressType: 'extract',
+              increment: clampedIncrement,
+              progress: Math.round(progress * 100) / 100,
+            })
+          }
+        }
+        controller.enqueue(chunk.slice(0))
+      },
+      flush: () => {
+        if (readBytes !== lastReportedBytes) {
+          const increment = Math.round((100 - lastReportedProgress) * 100) / 100
+          const clampedIncrement = Math.max(0, Math.min(100, increment))
+          if (clampedIncrement > 0) {
+            this.extractProgressEmitter.fire({
+              progressType: 'extract',
+              increment: clampedIncrement,
+              progress: 100,
+            })
+          }
+        }
+      },
+    })
+
+    const readable = fromWeb(
+      webReadable.pipeThrough(copyAndProgressTransform) as import('node:stream/web').ReadableStream,
+    ) as Readable
+
+    const abortHandler = () => readable.destroy(new DOMException('Aborted', 'AbortError'))
+    this.abortController.signal.addEventListener('abort', abortHandler)
+
+    readable.pipe(extract)
+    await extract.promise().finally(() => this.abortController.signal.removeEventListener('abort', abortHandler))
+  }
 }

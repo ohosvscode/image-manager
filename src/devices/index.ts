@@ -1,2 +1,1 @@
-export type { Device } from './device'
-export * from './list'
+export { Device } from './device'

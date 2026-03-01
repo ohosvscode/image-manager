@@ -66,11 +66,15 @@
     "@types/progress-stream": "^2.0.5",
     "@types/unzipper": "^0.10.11",
     "axios": "^1.13.4",
+    "base64-js": "^1.5.1",
+    "chokidar": "^5.0.0",
     "ini": "^6.0.0",
     "mitt": "^3.0.1",
     "progress-stream": "^2.0.0",
     "semver": "^7.7.4",
-    "unzipper": "^0.12.3"
+    "unzipper": "^0.12.3",
+    "vscode-fs": "^0.0.10",
+    "vscode-uri": "^3.1.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.2.0",
@@ -81,6 +85,7 @@
     "@vitest/coverage-v8": "4.0.18",
     "@vitest/ui": "4.0.18",
     "eslint": "^9.39.2",
+    "naily-eslint-config": "^0.0.2",
     "pnpm": "^10.28.2",
     "tsdown": "^0.20.2",
     "typescript": "^5.9.3",

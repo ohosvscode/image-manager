@@ -2,236 +2,106 @@ import type { ImageManager } from '../src'
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect } from 'vitest'
-import { createImageManager, RequestUrlError } from '../src'
-import { createScreenPreset } from '../src/screens/screen-preset'
+import { createImageManager } from '../src'
+import { SDKList } from '../src/sdk-list'
 
-const imageBasePath = path.resolve(__dirname, 'fixtures', 'images')
-const deployedPath = path.resolve(__dirname, 'fixtures', 'deployed')
-const emulatorPath = path.resolve(__dirname, 'fixtures', 'emulator')
-const projectRootPath = path.resolve(__dirname, '..')
-const downloadTest = false
+const FIXTURE_DIR = path.resolve(__dirname, 'fixtures')
 
 describe.sequential('image manager', (it) => {
   let imageManager: ImageManager
 
-  it.beforeAll(async () => {
-    if (downloadTest) {
-      for (const filePath of fs.readdirSync(path.resolve(imageBasePath))) {
-        if (filePath === '.gitkeep' || filePath === 'cache')
-          continue
-        fs.rmSync(path.resolve(imageBasePath, filePath), { recursive: true, force: true })
-      }
-      for (const filePath of fs.readdirSync(path.resolve(deployedPath))) {
-        if (filePath === '.gitkeep')
-          continue
-        fs.rmSync(path.resolve(deployedPath, filePath), { recursive: true, force: true })
-      }
-    }
-    imageManager = await createImageManager({ imageBasePath, deployedPath, emulatorPath })
-    expect(await imageManager.isCompatible()).toBe(true)
+  it.sequential('should create image manager', async () => {
+    imageManager = await createImageManager({
+      imageBasePath: path.resolve(FIXTURE_DIR, 'images'),
+      deployedPath: path.resolve(FIXTURE_DIR, 'deployed'),
+      cachePath: path.resolve(FIXTURE_DIR, 'cache'),
+      emulatorPath: path.resolve(FIXTURE_DIR, 'emulator'),
+    })
+    expect(imageManager).toBeDefined()
   })
 
-  it.sequential('should write default product config', async () => {
-    await imageManager.writeDefaultProductConfig()
-  })
+  it.skip('should get remote images, get local image and create device', async () => {
+    const remoteImages = await imageManager.getDownloadedRemoteImages()
+    if (remoteImages instanceof SDKList.SDKListError) throw remoteImages
+    const remoteImage = remoteImages[0]
+    if (!remoteImage) throw new Error('No remote image found')
+    const localImage = (await remoteImage.getLocalImage())!
+    expect(localImage).toBeDefined()
+    const emulatorFile = await imageManager.readEmulatorFile()
+    const emulatorDeviceItem = emulatorFile.findDeviceItem({
+      apiVersion: localImage.getApiVersion(),
+      deviceType: 'foldable',
+    })
+    if (!emulatorDeviceItem) throw new Error('No emulator device item found')
+    const productConfigFile = await imageManager.readProductConfigFile()
+    const productConfigItem = productConfigFile.findProductConfigItem({
+      deviceType: 'Foldable',
+      name: 'Mate X5',
+    })
+    if (!productConfigItem) throw new Error('No product config item found')
 
-  it.runIf(downloadTest)('should create image manager', async () => {
-    const images = await imageManager.getImages()
-    const image = images[0]
-    const downloader = await image.createDownloader()
-    if (downloader instanceof RequestUrlError)
-      return console.error(downloader)
-    downloader.on('download-progress', progress => console.warn(progress))
-    downloader.on('extract-progress', progress => console.warn(progress))
-    await downloader.startDownload()
-    const checksum = await downloader.checkChecksum()
-    console.warn(`Checksum: ${checksum}`)
-    if (!checksum)
-      return console.error('Checksum is not valid')
-    await downloader.extract()
-    await downloader.clean()
-  }, 1000 * 60 * 10)
-
-  it.sequential('should deploy and run image', async () => {
-    const image = await imageManager.getImages().then(images => images.find(image => image.imageType === 'local'))
-    if (!image)
-      return console.error('No local image found')
-    if (image instanceof RequestUrlError)
-      return console.error(image)
-    const productConfig = await image.getProductConfig()
-    const mateBookFold = productConfig.find(item => item.name === 'MateBook Fold')
-    if (!mateBookFold)
-      throw new Error('MateBook Fold not found')
-    const uuid = crypto.randomUUID()
-    const pascalCaseDeviceType = await image.getPascalCaseDeviceType()
-    if (!pascalCaseDeviceType)
-      throw new Error('PascalCaseDeviceType not found')
-    const deployer = image.createDevice({
-      name: 'MateBook Fold',
+    const device = await localImage.createDevice({
+      name: 'test',
       cpuNumber: 4,
-      diskSize: 6144,
-      memorySize: 4096,
-      screen: createScreenPreset({ image, productConfig: mateBookFold, pascalCaseDeviceType }),
-    }).setUuid(uuid)
-
-    expect(deployer.getScreenPreset()).toBeDefined()
-    expect(deployer.getScreenPreset()?.getProductPreset()).toBeDefined()
-
-    expect(deployer.buildList()).toMatchInlineSnapshot(`
-      {
-        "abi": "arm",
-        "apiVersion": "22",
-        "cpuNumber": "4",
-        "dataDiskSize": "6144",
-        "density": "288",
-        "devModel": "PCEMU-FD05",
-        "diagonalSize": "18.00",
-        "guestVersion": "HarmonyOS 6.0.0.129(Beta1)",
-        "harmonyOSVersion": "HarmonyOS-6.0.2",
-        "harmonyos.config.path": "${imageManager.getOptions().configPath}",
-        "harmonyos.log.path": "${imageManager.getOptions().logPath}",
-        "harmonyos.sdk.path": "${path.resolve(projectRootPath, 'test', 'fixtures', 'images')}",
-        "hw.apiName": "6.0.2",
-        "imageDir": "system-image/HarmonyOS-6.0.2/pc_all_arm/",
-        "memoryRamSize": "4096",
-        "model": "MateBook Fold",
-        "name": "MateBook Fold",
-        "path": "${path.resolve(projectRootPath, 'test', 'fixtures', 'deployed', 'MateBook Fold')}",
-        "resolutionHeight": "2472",
-        "resolutionWidth": "3296",
-        "showVersion": "HarmonyOS 6.0.2(22)",
-        "type": "2in1_foldable",
-        "uuid": "${uuid}",
-        "version": "6.0.0.129",
-      }
-    `)
-
-    expect(deployer.buildIni()).toMatchInlineSnapshot(`
-      {
-        "configPath": "${imageManager.getOptions().configPath}",
-        "deviceModel": "PCEMU-FD05",
-        "deviceType": "2in1_foldable",
-        "hw.cpu.arch": "arm",
-        "hw.cpu.ncore": "4",
-        "hw.dataPartitionSize": "6144",
-        "hw.hdc.port": "notset",
-        "hw.lcd.density": "288",
-        "hw.lcd.double.diagonalSize": "18",
-        "hw.lcd.double.height": "2472",
-        "hw.lcd.double.width": "3296",
-        "hw.lcd.number": "2",
-        "hw.lcd.single.diagonalSize": "13",
-        "hw.lcd.single.height": "1648",
-        "hw.lcd.single.width": "2472",
-        "hw.ramSize": "4096",
-        "imageSubPath": "system-image/HarmonyOS-6.0.2/pc_all_arm/",
-        "instancePath": "${path.resolve(projectRootPath, 'test', 'fixtures', 'deployed', 'MateBook Fold')}",
-        "isCustomize": "false",
-        "logPath": "${imageManager.getOptions().logPath}",
-        "name": "MateBook Fold",
-        "os.apiVersion": "22",
-        "os.isPublic": "true",
-        "os.osVersion": "HarmonyOS 6.0.2(22)",
-        "os.softwareVersion": "6.0.0.129",
-        "productModel": "MateBook Fold",
-        "sdkPath": "${path.resolve(projectRootPath, 'test', 'fixtures', 'images')}",
-        "uuid": "${uuid}",
-        "vendorCountry": "CN",
-      }
-    `)
-
-    expect(deployer.toIniString()).toMatchInlineSnapshot(`
-      "name=MateBook Fold
-      deviceType=2in1_foldable
-      deviceModel=PCEMU-FD05
-      productModel=MateBook Fold
-      vendorCountry=CN
-      uuid=${uuid}
-      configPath=${imageManager.getOptions().configPath}
-      logPath=${imageManager.getOptions().logPath}
-      sdkPath=${path.resolve(projectRootPath, 'test', 'fixtures', 'images')}
-      imageSubPath=system-image/HarmonyOS-6.0.2/pc_all_arm/
-      instancePath=${path.resolve(projectRootPath, 'test', 'fixtures', 'deployed', 'MateBook Fold')}
-      os.osVersion=HarmonyOS 6.0.2(22)
-      os.apiVersion=22
-      os.softwareVersion=6.0.0.129
-      os.isPublic=true
-      hw.cpu.arch=arm
-      hw.cpu.ncore=4
-      hw.lcd.density=288
-      hw.lcd.single.diagonalSize=13
-      hw.lcd.single.height=1648
-      hw.lcd.single.width=2472
-      hw.lcd.number=2
-      hw.ramSize=4096
-      hw.dataPartitionSize=6144
-      isCustomize=false
-      hw.hdc.port=notset
-      hw.lcd.double.diagonalSize=18
-      hw.lcd.double.height=2472
-      hw.lcd.double.width=3296
-      "
-    `)
-
-    if (!(await deployer.isDeployed()))
-      await deployer.deploy()
-    const child_process = await image.start(deployer)
-
-    return new Promise<void>(resolve => setTimeout(resolve, 1000 * 5))
-      .then(() => {
-        if (typeof child_process.exitCode === 'number')
-          throw new Error(`Emulator quit in 5 seconds, exit code: ${child_process.exitCode}`)
-      })
-      .then(() => image.stop(deployer))
-  }, 1000 * 100)
-
-  it.sequential('should get all devices', async () => {
-    const devices = await imageManager.getImages()
-      .then(images => images.filter(image => image.imageType === 'local')
-        .map(image => image.getDevices()))
-      .then(devices => Promise.all(devices))
-      .then(devices => devices.flat())
-
-    console.warn(devices)
-    for (const device of devices) {
-      console.warn('===== Screen =====')
-      console.warn(device.getScreen())
-      console.warn('===== Screen Preset =====')
-      console.warn(device.getScreenPreset())
-      console.warn('===== Product Preset =====')
-      console.warn(device.getScreenPreset()?.getProductPreset())
-      console.warn('===== Emulator Preset =====')
-      console.warn(device.getScreenPreset()?.getEmulatorPreset())
-    }
-  })
-})
-
-describe.skip('start', (it) => {
-  let imageManager: ImageManager
-
-  it.beforeAll(async () => {
-    imageManager = await createImageManager({ imageBasePath, deployedPath, emulatorPath })
+      dataDiskSize: 6144,
+      memoryRamSize: 8192,
+      screen: {
+        emulatorDeviceItem,
+        productConfigItem,
+      },
+    })
+    const configIniFileContent = await device.getConfigIniFile().serialize()
+    const namedIniFileContent = await device.getNamedIniFile().serialize()
+    await expect(configIniFileContent).toMatchFileSnapshot('./fixtures/deployed/test/config.ini')
+    await expect(namedIniFileContent).toMatchFileSnapshot('./fixtures/deployed/test.ini')
   })
 
-  it.sequential('should start image', async () => {
-    const image = await imageManager.getImages().then(images => images.find(image => image.imageType === 'local'))
-    if (!image)
-      throw new Error('No local image found')
-    const productConfig = await image.getProductConfig()
-    const mateBookFold = productConfig.find(item => item.name === 'MateBook Fold')
-    if (!mateBookFold)
-      throw new Error('MateBook Fold not found')
-    const pascalCaseDeviceType = await image.getPascalCaseDeviceType()
-    if (!pascalCaseDeviceType)
-      throw new Error('PascalCaseDeviceType not found')
-    await image.start(
-      image.createDevice({
-        name: 'MateBook Fold',
-        cpuNumber: 4,
-        diskSize: 6144,
-        memorySize: 4096,
-        screen: createScreenPreset({ image, productConfig: mateBookFold, pascalCaseDeviceType }),
-      }),
-    )
-  }, 1000 * 1000)
+  it.sequential('should get deployed devices', async () => {
+    const deployedDevices = await imageManager.getDeployedDevices()
+    expect(deployedDevices).toBeDefined()
+    expect(deployedDevices.length).toBeGreaterThanOrEqual(1)
+    console.warn(deployedDevices)
+    console.warn(`Starting device: ${deployedDevices[0].getStartCommand()}...`)
+    const start_child_process = await deployedDevices[0].start()
+    start_child_process.stdout.pipe(process.stdout)
+    start_child_process.stderr.pipe(process.stderr)
+    await Promise.race([
+      new Promise(resolve => start_child_process.on('close', resolve)),
+      new Promise(resolve => setTimeout(resolve, 1000 * 5 /** 5 seconds */)),
+    ])
+    console.warn(`Stopping device: ${deployedDevices[0].getStopCommand()}...`)
+    const stop_child_process = await deployedDevices[0].stop()
+    stop_child_process.stdout.pipe(process.stdout)
+    stop_child_process.stderr.pipe(process.stderr)
+    await Promise.race([
+      new Promise(resolve => stop_child_process.on('close', resolve)),
+      new Promise(resolve => setTimeout(resolve, 1000 * 5 /** 5 seconds */)),
+    ])
+  }, 1000 * 60 * 60 /** 1 hour */)
+
+  it.skip('should download and extract image', async () => {
+    fs.writeFileSync(path.resolve(FIXTURE_DIR, 'progress.log'), '')
+    const remoteImages = await imageManager.getRemoteImages()
+    if (remoteImages instanceof SDKList.SDKListError) throw remoteImages
+    const remoteImage = remoteImages.find((remoteImage) => {
+      return remoteImage.getRemoteImageSDK().apiVersion === '20' && remoteImage.getRemoteImageSDK().version === '6.0.0.48'
+    })
+    if (!remoteImage) throw new Error('No remote image found, please replace a new version of image.')
+    const downloader = await remoteImage.createDownloader()
+    downloader.onDownloadProgress((progress) => {
+      fs.appendFileSync(path.resolve(FIXTURE_DIR, 'progress.log'), `${JSON.stringify(progress)}\n`)
+      console.warn(JSON.stringify(progress))
+    })
+    downloader.onChecksumProgress((progress) => {
+      fs.appendFileSync(path.resolve(FIXTURE_DIR, 'progress.log'), `${JSON.stringify(progress)}\n`)
+      console.warn(JSON.stringify(progress))
+    })
+    downloader.onExtractProgress((progress) => {
+      fs.appendFileSync(path.resolve(FIXTURE_DIR, 'progress.log'), `${JSON.stringify(progress)}\n`)
+      console.warn(JSON.stringify(progress))
+    })
+    await downloader.startDownload()
+    await downloader.checkChecksum()
+    await downloader.extract()
+  }, 1000 * 60 * 60 /** 1 hour */)
 })

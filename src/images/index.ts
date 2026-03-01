@@ -1,3 +1,4 @@
-export type { Image, ImageType } from './image'
-export type { LocalImage } from './local-image'
-export type { RemoteImage } from './remote-image'
+export { BaseImage } from './base-image'
+export type { Image } from './image'
+export { LocalImage } from './local-image'
+export { RemoteImage } from './remote-image'
