@@ -1,7 +1,7 @@
 import type { EmulatorFile, ProductConfigFile } from '../configs'
 import type { Device } from '../devices/device'
 import type { ImageManager } from '../image-manager'
-import type { ScreenPreset } from '../screen-preset'
+import type { ScreenPreset } from '../screens/screen-preset'
 import type { BaseSerializable, DeepPartial, Serializable } from '../types'
 import type { BaseImage } from './base-image'
 import type { Image } from './image'
@@ -10,7 +10,7 @@ import { EmulatorFoldItem } from '../configs/emulator/emulator-fold-item'
 import { EmulatorTripleFoldItem } from '../configs/emulator/emulator-triplefold-item'
 import { NamedIniFileImpl } from '../configs/named-ini/named-ini'
 import { DeviceImpl } from '../devices/device'
-import { ScreenPresetImpl } from '../screen-preset'
+import { ScreenPresetImpl } from '../screens/screen-preset'
 import { BaseImageImpl } from './base-image'
 
 export interface LocalImage extends Serializable<LocalImage.Serializable>, Omit<BaseImage, 'toJSON'> {

@@ -16,7 +16,7 @@ import { DeviceImpl } from './devices/device'
 import { LocalImageImpl } from './images/local-image'
 import { RemoteImageImpl } from './images/remote-image'
 import { OptionsResolver } from './options'
-import { ScreenPresetImpl } from './screen-preset'
+import { ScreenPresetImpl } from './screens/screen-preset'
 import { SDKList } from './sdk-list'
 import { DeviceTypeConverter } from './utils/devicetype-converter'
 
