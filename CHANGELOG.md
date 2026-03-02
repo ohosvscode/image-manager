@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.1
+
+### Patch Changes
+
+- 70b797b: feat: export current version number
+
 ## 0.5.0
 
 ### Minor Changes
