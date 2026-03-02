@@ -1,4 +1,5 @@
 import type { SerializableFile } from '../../common/serializable-file'
+import type { RemoteImage } from '../../images'
 import type { BaseSerializable, Serializable } from '../../types'
 import { SerializableFileImpl } from '../../common/serializable-file'
 import { EmulatorBasicItem, EmulatorBasicItemImpl } from './emulator-basic-item'
@@ -11,6 +12,7 @@ export interface EmulatorFile extends Serializable<EmulatorFile.Serializable>, O
   findDeviceItem<DeviceType extends EmulatorFile.DeviceType>(options?: EmulatorFile.FindDeviceItemOptions<DeviceType extends EmulatorGroupItem.DeviceType ? never : DeviceType>): EmulatorFile.DeviceItem | undefined
   findItems(options?: EmulatorFile.FindItemOptions): EmulatorFile.Item[]
   findItem(options?: EmulatorFile.FindItemOptions): EmulatorFile.Item | undefined
+  findRemoteImageByDeviceItem(deviceItem: EmulatorFile.DeviceItem, remoteImages: RemoteImage[]): RemoteImage | undefined
   getItems(): EmulatorFile.Item[]
   getDeviceItems(): EmulatorFile.DeviceItem[]
 }
@@ -112,6 +114,24 @@ export class EmulatorFileImpl extends SerializableFileImpl<EmulatorFile.Content>
       }
     }
     return items
+  }
+
+  findRemoteImageByDeviceItem(deviceItem: EmulatorFile.DeviceItem, remoteImages: RemoteImage[]): RemoteImage | undefined {
+    return remoteImages.find((image) => {
+      if (image.getApiVersion() !== deviceItem.getContent().api) return false
+      if (image.getFullDeviceType() === deviceItem.getContent().deviceType) return true
+      if (image.getFullDeviceType() === 'pc_all') {
+        if (deviceItem.getContent().deviceType === '2in1') return true
+        else if (deviceItem.getContent().deviceType === '2in1_foldable') return true
+      }
+      else if (image.getFullDeviceType() === 'phone_all') {
+        if (deviceItem.getContent().deviceType === 'phone') return true
+        else if (deviceItem.getContent().deviceType === 'foldable') return true
+        else if (deviceItem.getContent().deviceType === 'widefold') return true
+        else if (deviceItem.getContent().deviceType === 'triplefold') return true
+      }
+      return false
+    })
   }
 
   findDeviceItems(options: EmulatorFile.FindDeviceItemOptions = {}): EmulatorFile.DeviceItem[] {
