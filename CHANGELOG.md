@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.3
+
+### Patch Changes
+
+- 03f252f: feat: add DeviceTypeConverter.camelcaseToSnakecase
+
 ## 0.5.2
 
 ### Patch Changes
