@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.2
+
+### Patch Changes
+
+- a15820e: feat: export device type converter and error classes
+
 ## 0.5.1
 
 ### Patch Changes
