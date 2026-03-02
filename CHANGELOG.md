@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.5
+
+### Patch Changes
+
+- 7107796: feat: add EmulatorFile.findRemoteImageByDeviceItem method
+
 ## 0.5.4
 
 ### Patch Changes
