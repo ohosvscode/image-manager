@@ -98,19 +98,16 @@ export class EmulatorFileImpl extends SerializableFileImpl<EmulatorFile.Content>
     }).filter(Boolean) as EmulatorFile.Item[]
   }
 
-  getDeviceItems(items: EmulatorFile.DeviceItem[] = []): EmulatorFile.DeviceItem[] {
+  getDeviceItems(): EmulatorFile.DeviceItem[] {
+    const items: EmulatorFile.DeviceItem[] = []
     for (const item of this.getItems()) {
-      if (EmulatorBasicItem.is(item)) {
-        items.push(item)
-      }
-      else if (EmulatorFoldItem.is(item)) {
-        items.push(item)
-      }
-      else if (EmulatorTripleFoldItem.is(item)) {
-        items.push(item)
+      if (EmulatorGroupItem.is(item)) {
+        for (const child of item.getChildren()) {
+          items.push(child)
+        }
       }
       else {
-        this.getDeviceItems(item.getChildren())
+        items.push(item)
       }
     }
     return items
