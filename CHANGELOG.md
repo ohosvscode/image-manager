@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.9
+
+### Patch Changes
+
+- bdf5ffb: fix: fix `trash` package no allow bundle
+
 ## 0.5.8
 
 ### Patch Changes
