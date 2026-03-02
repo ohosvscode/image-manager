@@ -114,13 +114,55 @@ export namespace OptionsResolver {
       }
     }
 
-    const imageBasePath = typeof options.imageBasePath === 'string' ? URI.file(options.imageBasePath) : (options.imageBasePath || resolveDefaultImageBasePath())
-    const cachePath = typeof options.cachePath === 'string' ? URI.file(options.cachePath) : (options.cachePath || join(imageBasePath, 'cache'))
-    const deployedPath = typeof options.deployedPath === 'string' ? URI.file(options.deployedPath) : (options.deployedPath || resolveDefaultDeployedPath())
-    const sdkPath = typeof options.sdkPath === 'string' ? URI.file(options.sdkPath) : (options.sdkPath || resolveDefaultSdkPath())
-    const configPath = typeof options.configPath === 'string' ? URI.file(options.configPath) : (options.configPath || resolveDefaultConfigPath())
-    const logPath = typeof options.logPath === 'string' ? URI.file(options.logPath) : (options.logPath || resolveDefaultLogPath())
-    const emulatorPath = typeof options.emulatorPath === 'string' ? URI.file(options.emulatorPath) : (options.emulatorPath || resolveDefaultEmulatorPath())
+    const imageBasePath = typeof options.imageBasePath === 'string'
+      ? options.imageBasePath
+        ? URI.file(options.imageBasePath)
+        : resolveDefaultImageBasePath()
+      : options.imageBasePath
+        ? options.imageBasePath
+        : resolveDefaultImageBasePath()
+    const cachePath = typeof options.cachePath === 'string'
+      ? options.cachePath
+        ? URI.file(options.cachePath)
+        : join(imageBasePath, 'cache')
+      : options.cachePath
+        ? options.cachePath
+        : join(imageBasePath, 'cache')
+    const deployedPath = typeof options.deployedPath === 'string'
+      ? options.deployedPath
+        ? URI.file(options.deployedPath)
+        : resolveDefaultDeployedPath()
+      : options.deployedPath
+        ? options.deployedPath
+        : resolveDefaultDeployedPath()
+    const sdkPath = typeof options.sdkPath === 'string'
+      ? options.sdkPath
+        ? URI.file(options.sdkPath)
+        : resolveDefaultSdkPath()
+      : options.sdkPath
+        ? options.sdkPath
+        : resolveDefaultSdkPath()
+    const configPath = typeof options.configPath === 'string'
+      ? options.configPath
+        ? URI.file(options.configPath)
+        : resolveDefaultConfigPath()
+      : options.configPath
+        ? options.configPath
+        : resolveDefaultConfigPath()
+    const logPath = typeof options.logPath === 'string'
+      ? options.logPath
+        ? URI.file(options.logPath)
+        : resolveDefaultLogPath()
+      : options.logPath
+        ? options.logPath
+        : resolveDefaultLogPath()
+    const emulatorPath = typeof options.emulatorPath === 'string'
+      ? options.emulatorPath
+        ? URI.file(options.emulatorPath)
+        : resolveDefaultEmulatorPath()
+      : options.emulatorPath
+        ? options.emulatorPath
+        : resolveDefaultEmulatorPath()
 
     return {
       imageBasePath,
