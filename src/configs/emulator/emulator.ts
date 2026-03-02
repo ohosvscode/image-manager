@@ -12,6 +12,7 @@ export interface EmulatorFile extends Serializable<EmulatorFile.Serializable>, O
   findItems(options?: EmulatorFile.FindItemOptions): EmulatorFile.Item[]
   findItem(options?: EmulatorFile.FindItemOptions): EmulatorFile.Item | undefined
   getItems(): EmulatorFile.Item[]
+  getDeviceItems(): EmulatorFile.DeviceItem[]
 }
 
 export namespace EmulatorFile {
@@ -168,6 +169,7 @@ export class EmulatorFileImpl extends SerializableFileImpl<EmulatorFile.Content>
   toJSON(): EmulatorFile.Serializable {
     return {
       ...super.toJSON(),
+      deviceItems: this.getDeviceItems().map(item => item.toJSON()),
       items: this.getItems().map(item => item.toJSON()),
     }
   }
