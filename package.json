@@ -73,7 +73,7 @@
     "progress-stream": "^2.0.0",
     "semver": "^7.7.4",
     "unzipper": "^0.12.3",
-    "vscode-fs": "^0.0.10",
+    "vscode-fs": "^0.1.0",
     "vscode-uri": "^3.1.0"
   },
   "devDependencies": {
