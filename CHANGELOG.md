@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.10
+
+### Patch Changes
+
+- 6ad4986: fix: createDevice optional chaining
+
 ## 0.5.9
 
 ### Patch Changes
