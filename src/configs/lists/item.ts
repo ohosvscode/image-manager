@@ -12,7 +12,8 @@ export interface ListsFileItem<
 }
 
 export namespace ListsFileItem {
-  export interface Serializable extends Omit<BaseSerializable<ListsFileItem>, 'imageManager'> {}
+  /** Excludes `listsFile` to avoid circular reference: ListsFile contains ListsFileItems, each of which would reference back to ListsFile. */
+  export interface Serializable extends Omit<BaseSerializable<ListsFileItem>, 'imageManager' | 'listsFile'> {}
 
   export type DeviceType
     = | 'phone'
@@ -223,7 +224,6 @@ export class ListsFileItemImpl extends SerializableContentImpl<ListsFileItem.Con
   toJSON(): ListsFileItem.Serializable {
     return {
       content: this.getContent(),
-      listsFile: this.getListsFile().toJSON(),
     }
   }
 }
