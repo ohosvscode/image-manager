@@ -39,8 +39,8 @@ importers:
         specifier: ^0.12.3
         version: 0.12.3
       vscode-fs:
-        specifier: ^0.1.0
-        version: 0.1.0(vscode-uri@3.1.0)
+        specifier: ^0.1.1
+        version: 0.1.1(vscode-uri@3.1.0)
       vscode-uri:
         specifier: ^3.1.0
         version: 3.1.0
@@ -3095,8 +3095,8 @@ packages:
       jsdom:
         optional: true
 
-  vscode-fs@0.1.0:
-    resolution: {integrity: sha512-QMLxYPKMVubfOvSPlEE+M7G8UsSDAQIGgXA8odKBlYodElDDEAuRvdvAOECbXLeXwUdcKJ3E+1glCp00waLWRg==, tarball: https://registry.npmjs.org/vscode-fs/-/vscode-fs-0.1.0.tgz}
+  vscode-fs@0.1.1:
+    resolution: {integrity: sha512-z+7sqCgwsA8xCYQg3CA4AECEKoTY3ueGHNLhUaJ5JhuyO1XqYpHYgiRTIg71gKRZbEoUwaApwd7OGI9I1RLr6w==, tarball: https://registry.npmjs.org/vscode-fs/-/vscode-fs-0.1.1.tgz}
     engines: {node: '>=17.0.0'}
     peerDependencies:
       vscode-uri: ^3.1.0
@@ -6368,7 +6368,7 @@ snapshots:
       - tsx
       - yaml
 
-  vscode-fs@0.1.0(vscode-uri@3.1.0):
+  vscode-fs@0.1.1(vscode-uri@3.1.0):
     dependencies:
       chokidar: 5.0.0
       tinyglobby: 0.2.15
