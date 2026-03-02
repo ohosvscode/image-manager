@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.7
+
+### Patch Changes
+
+- 4d2baf5: fix: getDeviceItems maximum call stack size exceeded
+
 ## 0.5.6
 
 ### Patch Changes
