@@ -32,7 +32,11 @@ export class ListsFileImpl extends SerializableFileImpl<ListsFile.Content> imple
   }
 
   addListsFileItem(listsFileItem: ListsFileItem.Content): ListsFileItem {
-    this.content.push(listsFileItem)
+    this.content.push(
+      Object.fromEntries(
+        Object.entries(listsFileItem).filter(([_, value]) => value !== undefined && value !== null),
+      ) as ListsFileItem.Content,
+    )
     this.removeDuplicateListFileItems(this.content)
     this._isChanged = true
     return new ListsFileItemImpl(this, listsFileItem)

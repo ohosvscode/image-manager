@@ -166,10 +166,10 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
       uuid,
       'name': options.name,
       'apiVersion': this.getApiVersion().toString(),
-      'cpuNumber': options.cpuNumber.toString(),
+      'cpuNumber': options.cpuNumber?.toString(),
       'path': deviceFolderPath.fsPath,
-      'memoryRamSize': options.memoryRamSize.toString(),
-      'dataDiskSize': options.dataDiskSize.toString(),
+      'memoryRamSize': options.memoryRamSize?.toString(),
+      'dataDiskSize': options.dataDiskSize?.toString(),
       'version': this.getSdkPkgFile().data?.version ?? '',
       'imageDir': this.getRelativePath(),
       'showVersion': this.getSdkPkgFile().data?.guestVersion ?? '',
@@ -177,25 +177,25 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
       'harmonyos.config.path': configPath.fsPath,
       'harmonyos.log.path': logPath.fsPath,
       'hw.apiName': this.getSdkPkgFile().data?.platformVersion ?? '',
-      'abi': this.infoFile.abi,
+      'abi': this.infoFile?.abi,
       'harmonyOSVersion': `${this.getSdkPkgFile().data?.guestVersion?.split(' ')[0]}-${this.getSdkPkgFile().data?.platformVersion}`,
       'guestVersion': this.getSdkPkgFile().data?.guestVersion ?? '',
-      'diagonalSize': emulatorDeviceItem.getContent().diagonalSize.toString(),
-      'density': emulatorDeviceItem.getContent().density.toString(),
-      'resolutionWidth': emulatorDeviceItem.getContent().resolutionWidth.toString(),
-      'resolutionHeight': emulatorDeviceItem.getContent().resolutionHeight.toString(),
+      'diagonalSize': emulatorDeviceItem.getContent()?.diagonalSize?.toString(),
+      'density': emulatorDeviceItem.getContent()?.density?.toString(),
+      'resolutionWidth': emulatorDeviceItem.getContent()?.resolutionWidth?.toString(),
+      'resolutionHeight': emulatorDeviceItem.getContent()?.resolutionHeight?.toString(),
       'coverResolutionWidth': EmulatorFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().coverResolutionWidth.toString()
+        ? emulatorDeviceItem.getContent()?.coverResolutionWidth?.toString()
         : undefined,
       'coverResolutionHeight': EmulatorFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().coverResolutionHeight.toString()
+        ? emulatorDeviceItem.getContent()?.coverResolutionHeight?.toString()
         : undefined,
       'coverDiagonalSize': EmulatorFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().coverDiagonalSize.toString()
+        ? emulatorDeviceItem.getContent()?.coverDiagonalSize?.toString()
         : undefined,
-      'type': emulatorDeviceItem.getContent().deviceType,
+      'type': emulatorDeviceItem.getContent()?.deviceType,
       'devModel': productConfigItem.getDevModel(),
-      'model': productConfigItem.getContent().name,
+      'model': productConfigItem.getContent()?.name,
     })
 
     const device = new DeviceImpl<ProductDeviceType, ProductName>({
@@ -207,47 +207,47 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
 
     const deviceIniUri = ConfigIniFileImpl.getFileUri<ProductDeviceType, ProductName>(device)
     const deviceIniFile = new ConfigIniFileImpl<ProductDeviceType, ProductName>(device, deviceIniUri, {
-      'name': listFileItem.getContent().name,
-      'deviceType': listFileItem.getContent().type,
-      'deviceModel': listFileItem.getContent().devModel,
-      'productModel': listFileItem.getContent().model as ProductName,
+      'name': listFileItem.getContent()?.name,
+      'deviceType': listFileItem.getContent()?.type,
+      'deviceModel': listFileItem.getContent()?.devModel,
+      'productModel': listFileItem.getContent()?.model as ProductName,
       'vendorCountry': options.vendorCountry ?? 'CN',
-      'uuid': listFileItem.getContent().uuid,
+      'uuid': listFileItem.getContent()?.uuid,
       'configPath': listFileItem.getContent()['harmonyos.config.path'],
       'logPath': listFileItem.getContent()['harmonyos.log.path'],
       'sdkPath': listFileItem.getContent()['harmonyos.sdk.path'],
-      'imageSubPath': listFileItem.getContent().imageDir,
-      'instancePath': listFileItem.getContent().path,
+      'imageSubPath': listFileItem.getContent()?.imageDir,
+      'instancePath': listFileItem.getContent()?.path,
       'os.osVersion': `${this.getSdkPkgFile().data?.guestVersion?.split(' ')[0]} ${this.getSdkPkgFile().data?.platformVersion}(${this.getApiVersion()})`,
       'os.apiVersion': this.getApiVersion().toString(),
       'os.softwareVersion': this.getSdkPkgFile().data?.version ?? '',
       'os.isPublic': (options.isPublic ?? true) ? 'true' : 'false',
-      'hw.cpu.arch': listFileItem.getContent().abi,
-      'hw.cpu.ncore': listFileItem.getContent().cpuNumber,
-      'hw.lcd.density': emulatorDeviceItem.getContent().density.toFixed(),
+      'hw.cpu.arch': listFileItem.getContent()?.abi,
+      'hw.cpu.ncore': listFileItem.getContent()?.cpuNumber,
+      'hw.lcd.density': emulatorDeviceItem.getContent()?.density?.toFixed(),
       'hw.lcd.single.diagonalSize': EmulatorTripleFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().singleDiagonalSize.toString()
+        ? emulatorDeviceItem.getContent()?.singleDiagonalSize?.toString()
         : undefined,
       'hw.lcd.single.height': EmulatorTripleFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().singleResolutionHeight.toString()
+        ? emulatorDeviceItem.getContent()?.singleResolutionHeight?.toString()
         : undefined,
       'hw.lcd.single.width': EmulatorTripleFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().singleResolutionWidth.toString()
+        ? emulatorDeviceItem.getContent()?.singleResolutionWidth?.toString()
         : undefined,
       'hw.lcd.double.diagonalSize': EmulatorTripleFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().doubleDiagonalSize.toString()
+        ? emulatorDeviceItem.getContent()?.doubleDiagonalSize?.toString()
         : undefined,
       'hw.lcd.double.height': EmulatorTripleFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().doubleResolutionHeight.toString()
+        ? emulatorDeviceItem.getContent()?.doubleResolutionHeight?.toString()
         : undefined,
       'hw.lcd.double.width': EmulatorTripleFoldItem.is(emulatorDeviceItem)
-        ? emulatorDeviceItem.getContent().doubleResolutionWidth.toString()
+        ? emulatorDeviceItem.getContent()?.doubleResolutionWidth?.toString()
         : undefined,
-      'hw.lcd.phy.height': emulatorDeviceItem.getContent().physicalHeight.toString(),
-      'hw.lcd.phy.width': emulatorDeviceItem.getContent().physicalWidth.toString(),
+      'hw.lcd.phy.height': emulatorDeviceItem.getContent()?.physicalHeight?.toString(),
+      'hw.lcd.phy.width': emulatorDeviceItem.getContent()?.physicalWidth?.toString(),
       'hw.lcd.number': (EmulatorTripleFoldItem.is(emulatorDeviceItem) || EmulatorFoldItem.is(emulatorDeviceItem)) ? '2' : '1',
-      'hw.ramSize': listFileItem.getContent().memoryRamSize,
-      'hw.dataPartitionSize': listFileItem.getContent().dataDiskSize,
+      'hw.ramSize': listFileItem.getContent()?.memoryRamSize,
+      'hw.dataPartitionSize': listFileItem.getContent()?.dataDiskSize,
       'isCustomize': 'true',
       'hw.hdc.port': 'notset',
     })
@@ -256,7 +256,7 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
     const namedIniUri = NamedIniFileImpl.getFileUri<ProductDeviceType, ProductName>(device)
     const namedIniFile = new NamedIniFileImpl<ProductDeviceType, ProductName>(device, namedIniUri, {
       'hvd.ini.encoding': 'UTF-8',
-      'path': listFileItem.getContent().path,
+      'path': listFileItem.getContent()?.path,
     })
     device.setNamedIniFile(namedIniFile)
 
