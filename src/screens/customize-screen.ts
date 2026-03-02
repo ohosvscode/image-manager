@@ -1,5 +1,5 @@
-import type { ScreenPreset } from './screen-preset'
 import type { BaseSerializable, Serializable } from '../types'
+import type { ScreenPreset } from './screen-preset'
 
 export interface CustomizeScreen extends Serializable<CustomizeScreen.Serializable> {
   /**

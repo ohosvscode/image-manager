@@ -1,6 +1,6 @@
-import type { ScreenPreset } from './screen-preset'
 import type { Serializable } from '../types'
 import type { CustomizeScreen } from './customize-screen'
+import type { ScreenPreset } from './screen-preset'
 import { CustomizeScreenImpl } from './customize-screen'
 
 export interface CustomizeFoldableScreen extends Serializable<CustomizeFoldableScreen.Serializable>, Omit<CustomizeScreen, 'toJSON'> {
