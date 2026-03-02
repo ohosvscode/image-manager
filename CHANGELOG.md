@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.6
+
+### Patch Changes
+
+- 80ab715: feat: update OptionsResolver
+
 ## 0.5.5
 
 ### Patch Changes
