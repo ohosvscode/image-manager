@@ -91,7 +91,7 @@ export namespace ProductConfigFile {
   /** Names from device types other than DeviceType. Used to detect ambiguous names like "Customize". */
   export type OtherDeviceTypeNames<DeviceType extends ProductConfigFile.DeviceType> = Exclude<ProductConfigItem.Name, Content[DeviceType][number]['name']>
 
-  export interface Serializable extends BaseSerializable<ProductConfigFile> {}
+  export interface Serializable extends Omit<BaseSerializable<ProductConfigFile>, 'imageManager'> {}
 
   export interface Generic {
     readonly deviceType: DeviceType

@@ -41,7 +41,7 @@ export interface BaseImageOptions {
 }
 
 export namespace BaseImage {
-  export interface Serializable extends BaseSerializable<BaseImage> {
+  export interface Serializable extends Omit<BaseSerializable<BaseImage>, 'imageManager'> {
     imageType: 'local' | 'remote'
   }
 
@@ -87,7 +87,6 @@ export abstract class BaseImageImpl implements BaseImage {
   toJSON(): BaseImage.Serializable {
     return {
       imageType: this.imageType,
-      imageManager: this.getImageManager().toJSON(),
       relativePath: this.getRelativePath(),
       fullPath: this.getFullPath().toJSON(),
       apiVersion: this.getApiVersion(),

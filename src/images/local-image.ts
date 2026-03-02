@@ -34,7 +34,7 @@ export interface LocalImage extends Serializable<LocalImage.Serializable>, Omit<
 }
 
 export namespace LocalImage {
-  export interface Serializable extends BaseImage.Serializable, BaseSerializable<LocalImage> {}
+  export interface Serializable extends BaseImage.Serializable, Omit<BaseSerializable<LocalImage>, 'imageManager'> {}
 
   export interface SdkPkgFile {
     /**

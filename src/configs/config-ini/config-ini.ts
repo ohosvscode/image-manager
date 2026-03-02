@@ -23,7 +23,7 @@ export namespace ConfigIniFile {
   export interface Serializable<
     ProductDeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,
     ProductName extends ProductConfigFile.GenericContent<ProductDeviceType>['name'] = ProductConfigFile.GenericContent<ProductDeviceType>['name'],
-  > extends Omit<BaseSerializable<ConfigIniFile<ProductDeviceType, ProductName>>, 'device'> {}
+  > extends Omit<BaseSerializable<ConfigIniFile<ProductDeviceType, ProductName>>, 'device' | 'imageManager'> {}
 
   export function is(value: unknown): value is ConfigIniFile {
     return value instanceof ConfigIniFileImpl

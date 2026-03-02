@@ -13,7 +13,7 @@ export interface SerializableFile extends Serializable<SerializableFile.Serializ
 
 export namespace SerializableFile {
   export type Content = SerializableContent.Content
-  export interface Serializable extends BaseSerializable<SerializableFile> {}
+  export interface Serializable extends Omit<BaseSerializable<SerializableFile>, 'imageManager'> {}
 }
 
 export abstract class SerializableFileImpl<Content extends SerializableFile.Content> extends SerializableContentImpl<Content> implements SerializableFile {
@@ -42,7 +42,6 @@ export abstract class SerializableFileImpl<Content extends SerializableFile.Cont
 
   toJSON(): SerializableFile.Serializable {
     return {
-      imageManager: this.getImageManager().toJSON(),
       content: this.getContent(),
     }
   }

@@ -34,7 +34,7 @@ export interface RemoteImage extends Serializable<RemoteImage.Serializable>, Omi
 }
 
 export namespace RemoteImage {
-  export interface Serializable extends BaseImage.Serializable, BaseSerializable<RemoteImage> {}
+  export interface Serializable extends BaseImage.Serializable, Omit<BaseSerializable<RemoteImage>, 'imageManager'> {}
 
   export function is(value: unknown): value is RemoteImage {
     return value instanceof RemoteImageImpl

@@ -12,7 +12,7 @@ export interface ListsFile extends Serializable<ListsFile.Serializable>, Omit<Se
 
 export namespace ListsFile {
   export type Content = ListsFileItem.Content[]
-  export interface Serializable extends BaseSerializable<ListsFile> {}
+  export interface Serializable extends Omit<BaseSerializable<ListsFile>, 'imageManager'> {}
 
   export function is(value: unknown): value is ListsFile {
     return value instanceof ListsFileImpl
@@ -62,7 +62,6 @@ export class ListsFileImpl extends SerializableFileImpl<ListsFile.Content> imple
 
   toJSON(): ListsFile.Serializable {
     return {
-      imageManager: this.getImageManager().toJSON(),
       content: this.getContent(),
       listsFileItems: this.getListsFileItems().map(item => item.toJSON()),
     }

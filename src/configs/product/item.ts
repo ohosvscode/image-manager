@@ -261,7 +261,7 @@ export namespace ProductConfigItem {
       | WearableContent
       | WearableKidContent
 
-  export interface Serializable extends BaseSerializable<ProductConfigItem> {}
+  export interface Serializable extends Omit<BaseSerializable<ProductConfigItem>, 'imageManager'> {}
 
   export type DevModel
     = 'MCHEMU-AL00CN' // Wearable
@@ -322,7 +322,6 @@ export class ProductConfigItemImpl<
 
   toJSON(): ProductConfigItem.Serializable {
     return {
-      imageManager: this.getImageManager().toJSON(),
       content: this.getContent(),
       devModel: this.getDevModel(),
       deviceType: this.getDeviceType(),

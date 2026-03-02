@@ -12,7 +12,7 @@ export interface ListsFileItem<
 }
 
 export namespace ListsFileItem {
-  export interface Serializable extends BaseSerializable<ListsFileItem> {}
+  export interface Serializable extends Omit<BaseSerializable<ListsFileItem>, 'imageManager'> {}
 
   export type DeviceType
     = | 'phone'
@@ -222,7 +222,6 @@ export class ListsFileItemImpl extends SerializableContentImpl<ListsFileItem.Con
 
   toJSON(): ListsFileItem.Serializable {
     return {
-      imageManager: this.getImageManager().toJSON(),
       content: this.getContent(),
       listsFile: this.getListsFile().toJSON(),
     }

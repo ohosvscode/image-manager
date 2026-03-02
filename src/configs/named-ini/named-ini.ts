@@ -18,7 +18,7 @@ export namespace NamedIniFile {
   export interface Serializable<
     ProductDeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,
     ProductName extends ProductConfigFile.GenericContent<ProductDeviceType>['name'] = ProductConfigFile.GenericContent<ProductDeviceType>['name'],
-  > extends Omit<BaseSerializable<NamedIniFile<ProductDeviceType, ProductName>>, 'device'> {}
+  > extends Omit<BaseSerializable<NamedIniFile<ProductDeviceType, ProductName>>, 'device' | 'imageManager'> {}
 
   export function is(value: unknown): value is NamedIniFile {
     return value instanceof NamedIniFileImpl
@@ -80,7 +80,6 @@ export class NamedIniFileImpl<
 
   toJSON(): NamedIniFile.Serializable {
     return {
-      imageManager: this.getImageManager().toJSON(),
       content: this.getContent(),
       fileUri: this.getFileUri().toJSON(),
     }

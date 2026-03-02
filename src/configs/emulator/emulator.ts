@@ -15,7 +15,7 @@ export interface EmulatorFile extends Serializable<EmulatorFile.Serializable>, O
 }
 
 export namespace EmulatorFile {
-  export interface Serializable extends BaseSerializable<EmulatorFile> {}
+  export interface Serializable extends Omit<BaseSerializable<EmulatorFile>, 'imageManager'> {}
   export type ItemContent = EmulatorBasicItem.Content | EmulatorFoldItem.Content | EmulatorTripleFoldItem.Content
   export type Content = Array<ContentItem>
   export type ContentItem = EmulatorGroupItem.Content | ItemContent
@@ -93,6 +93,24 @@ export class EmulatorFileImpl extends SerializableFileImpl<EmulatorFile.Content>
         }
       }
     }).filter(Boolean) as EmulatorFile.Item[]
+  }
+
+  getDeviceItems(items: EmulatorFile.DeviceItem[] = []): EmulatorFile.DeviceItem[] {
+    for (const item of this.getItems()) {
+      if (EmulatorBasicItem.is(item)) {
+        items.push(item)
+      }
+      else if (EmulatorFoldItem.is(item)) {
+        items.push(item)
+      }
+      else if (EmulatorTripleFoldItem.is(item)) {
+        items.push(item)
+      }
+      else {
+        this.getDeviceItems(item.getChildren())
+      }
+    }
+    return items
   }
 
   findDeviceItems(options: EmulatorFile.FindDeviceItemOptions = {}): EmulatorFile.DeviceItem[] {

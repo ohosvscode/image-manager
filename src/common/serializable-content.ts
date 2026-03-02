@@ -8,7 +8,7 @@ export interface SerializableContent<T extends SerializableContent.Content = Ser
 
 export namespace SerializableContent {
   export type Content = Record<PropertyKey, any> | Content[]
-  export interface Serializable extends BaseSerializable<SerializableContent> {}
+  export interface Serializable extends Omit<BaseSerializable<SerializableContent>, 'imageManager'> {}
 }
 
 export abstract class SerializableContentImpl<T extends SerializableContent.Content> implements SerializableContent<T> {
@@ -27,7 +27,6 @@ export abstract class SerializableContentImpl<T extends SerializableContent.Cont
 
   toJSON(): SerializableContent.Serializable {
     return {
-      imageManager: this.getImageManager().toJSON(),
       content: this.getContent(),
     }
   }
