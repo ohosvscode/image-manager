@@ -1,3 +1,4 @@
+export { version } from '../package.json'
 export * from './configs'
 export * from './devices'
 export { createImageManager, type ImageManager } from './image-manager'
