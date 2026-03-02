@@ -1,5 +1,12 @@
 # @arkts/image-manager
 
+## 0.5.4
+
+### Patch Changes
+
+- 30469df: feat: add EmulatorFile.getDeviceItems method
+- 6c6ca2c: fix: remove imageManager in all toJSON() method
+
 ## 0.5.3
 
 ### Patch Changes
