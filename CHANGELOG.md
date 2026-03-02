@@ -1,5 +1,15 @@
 # @arkts/image-manager
 
+## 0.5.8
+
+### Patch Changes
+
+- 00cdd89: fix: resolve stack overflow from circular reference when serializing getDeployedDevices
+
+  ListsFileItem.toJSON() called getListsFile().toJSON(), while ListsFile.toJSON()
+  serialized all ListsFileItems, causing infinite recursion. Remove the listsFile
+  field from ListsFileItem serialization to break the cycle.
+
 ## 0.5.7
 
 ### Patch Changes
