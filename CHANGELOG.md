@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.12-beta.3
+
+### Patch Changes
+
+- c43bf3e: fix: EmulatorFoldItem single screen size"
+
 ## 0.5.12-beta.2
 
 ### Patch Changes
