@@ -5,6 +5,7 @@ import type { ScreenPreset } from '../screens/screen-preset'
 import type { BaseSerializable, DeepPartial, Serializable } from '../types'
 import type { BaseImage } from './base-image'
 import type { Image } from './image'
+import { ProductConfigItem } from '../configs'
 import { ConfigIniFileImpl } from '../configs/config-ini/config-ini'
 import { EmulatorFoldItem } from '../configs/emulator/emulator-fold-item'
 import { EmulatorTripleFoldItem } from '../configs/emulator/emulator-triplefold-item'
@@ -158,6 +159,7 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
     const screen = new ScreenPresetImpl(options.screen)
     const emulatorDeviceItem = screen.getEmulatorDeviceItem()
     const productConfigItem = screen.getProductConfigItem()
+    const productConfigItemContent = productConfigItem.getContent()
     const listsFile = await this.getImageManager().readListsFile()
     const uuid = crypto.randomUUID()
     const deviceFolderPath = join(deployedPath, options.name)
@@ -229,18 +231,18 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
       'hw.lcd.density': emulatorDeviceItem.getContent()?.density?.toFixed(),
       'hw.lcd.single.diagonalSize': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.singleDiagonalSize?.toString()
-        : EmulatorFoldItem.is(emulatorDeviceItem)
-          ? emulatorDeviceItem.getContent()?.diagonalSize?.toString()
+        : ProductConfigItem.isBaseFoldContent(productConfigItemContent)
+          ? productConfigItemContent.screenDiagonal.toString()
           : undefined,
       'hw.lcd.single.height': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.singleResolutionHeight?.toString()
-        : EmulatorFoldItem.is(emulatorDeviceItem)
-          ? emulatorDeviceItem.getContent()?.resolutionHeight?.toString()
+        : ProductConfigItem.isBaseFoldContent(productConfigItemContent)
+          ? productConfigItemContent.outerScreenHeight.toString()
           : undefined,
       'hw.lcd.single.width': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.singleResolutionWidth?.toString()
-        : EmulatorFoldItem.is(emulatorDeviceItem)
-          ? emulatorDeviceItem.getContent()?.resolutionWidth?.toString()
+        : ProductConfigItem.isBaseFoldContent(productConfigItemContent)
+          ? productConfigItemContent.outerScreenWidth.toString()
           : undefined,
       'hw.lcd.double.diagonalSize': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.doubleDiagonalSize?.toString()
