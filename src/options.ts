@@ -8,6 +8,7 @@ export type ResolvedImageManagerOptions = Omit<Required<ImageManager.Options>, '
   deployedPath: import('vscode-uri').URI
   cachePath: import('vscode-uri').URI
   sdkPath: import('vscode-uri').URI
+  defaultSdkPath: import('vscode-uri').URI | undefined
   configPath: import('vscode-uri').URI
   logPath: import('vscode-uri').URI
   emulatorPath: import('vscode-uri').URI
@@ -44,7 +45,7 @@ export namespace OptionsResolver {
 
   export async function resolveImageManagerOptions(options: ImageManager.Options): Promise<ResolvedImageManagerOptions> {
     const adapter = await resolveAdapter(options.adapter)
-    const { os, join, process, URI } = adapter
+    const { os, join, process, URI, fs } = adapter
 
     function resolveDefaultImageBasePath(): import('vscode-uri').URI {
       switch (process.platform) {
@@ -55,7 +56,7 @@ export namespace OptionsResolver {
         case 'darwin':
           return join(URI.file(os.homedir()), 'Library', 'Huawei', 'Sdk')
         default:
-          return join(URI.file(os.homedir()), '.huawei', 'Sdk')
+          return join(URI.file(os.homedir()), '.Huawei', 'Sdk')
       }
     }
 
@@ -66,7 +67,7 @@ export namespace OptionsResolver {
             ? join(URI.file(process.env.APPDATA), 'Local', 'Huawei', 'Emulator', 'deployed')
             : join(URI.file(os.homedir()), 'AppData', 'Local', 'Huawei', 'Emulator', 'deployed')
         default:
-          return join(URI.file(os.homedir()), '.huawei', 'Emulator', 'deployed')
+          return join(URI.file(os.homedir()), '.Huawei', 'Emulator', 'deployed')
       }
     }
 
@@ -77,7 +78,7 @@ export namespace OptionsResolver {
         case 'win32':
           return URI.file('C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony')
         default:
-          return join(URI.file(os.homedir()), '.huawei', 'Sdk', 'default', 'openharmony')
+          return join(URI.file(os.homedir()), '.Huawei', 'Sdk', 'default', 'openharmony')
       }
     }
 
@@ -88,7 +89,7 @@ export namespace OptionsResolver {
         case 'win32':
           return join(URI.file(process.env.APPDATA ?? os.homedir()), 'Roaming', 'Huawei', 'DevEcoStudio6.0')
         default:
-          return join(URI.file(os.homedir()), '.huawei', 'DevEcoStudio6.0')
+          return join(URI.file(os.homedir()), '.Huawei', 'DevEcoStudio6.0')
       }
     }
 
@@ -99,7 +100,7 @@ export namespace OptionsResolver {
         case 'win32':
           return join(URI.file(process.env.APPDATA ?? os.homedir()), 'Local', 'Huawei', 'DevEcoStudio6.0', 'log')
         default:
-          return join(URI.file(os.homedir()), '.huawei', 'DevEcoStudio6.0', 'log')
+          return join(URI.file(os.homedir()), '.Huawei', 'DevEcoStudio6.0', 'log')
       }
     }
 
@@ -110,7 +111,7 @@ export namespace OptionsResolver {
         case 'win32':
           return URI.file('C:\\Program Files\\Huawei\\DevEco Studio\\tools\\emulator')
         default:
-          return join(URI.file(os.homedir()), '.huawei', 'Emulator')
+          return join(URI.file(os.homedir()), '.Huawei', 'Emulator')
       }
     }
 
@@ -169,6 +170,10 @@ export namespace OptionsResolver {
       deployedPath,
       cachePath,
       sdkPath,
+      defaultSdkPath: await fs.isDirectory(resolveDefaultSdkPath()).then(
+        isDirectory => isDirectory ? resolveDefaultSdkPath() : undefined,
+        () => undefined,
+      ),
       configPath,
       logPath,
       emulatorPath,

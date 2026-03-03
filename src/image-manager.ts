@@ -58,7 +58,7 @@ export namespace ImageManager {
      *
      * - In macOS, it will be `/Applications/DevEco-Studio.app/Contents/sdk/default/openharmony` by default;
      * - In Windows, it will be `C:\Program Files\Huawei\DevEco Studio\sdk\default\openharmony` by default;
-     * - In other platforms, it will be `~/.huawei/Sdk/default/openharmony` by default.
+     * - In other platforms, it will be `~/.Huawei/Sdk/default/openharmony` by default.
      */
     sdkPath?: string | import('vscode-uri').URI
     /**
@@ -66,7 +66,7 @@ export namespace ImageManager {
      *
      * - In macOS, it will be `~/Library/Application Support/Huawei/DevEcoStudio6.0` by default;
      * - In Windows, it will be `%APPDATA%\Roaming\Huawei\DevEcoStudio6.0` by default;
-     * - In other platforms, it will be `~/.huawei/DevEcoStudio6.0` by default.
+     * - In other platforms, it will be `~/.Huawei/DevEcoStudio6.0` by default.
      */
     configPath?: string | import('vscode-uri').URI
     /**
@@ -74,7 +74,7 @@ export namespace ImageManager {
      *
      * - In macOS, it will be `~/Library/Logs/Huawei/DevEcoStudio6.0` by default;
      * - In Windows, it will be `%APPDATA%\Local\Huawei\DevEcoStudio6.0\log` by default;
-     * - In other platforms, it will be `~/.huawei/DevEcoStudio6.0/log` by default.
+     * - In other platforms, it will be `~/.Huawei/DevEcoStudio6.0/log` by default.
      */
     logPath?: string | import('vscode-uri').URI
     /**
@@ -84,7 +84,7 @@ export namespace ImageManager {
      *
      * - In macOS, it will be `/Applications/DevEco-Studio.app/Contents/tools/emulator`;
      * - In Windows, it will be `C:\Program Files\Huawei\DevEco Studio\tools\emulator`;
-     * - In other platforms, it will be `~/.huawei/Emulator`.
+     * - In other platforms, it will be `~/.Huawei/Emulator`.
      */
     emulatorPath?: string | import('vscode-uri').URI
     /**

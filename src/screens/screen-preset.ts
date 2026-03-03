@@ -102,10 +102,18 @@ export class ScreenPresetImpl<
 
   getCustomizeScreenConfig(): CustomizeScreen | CustomizeFoldableScreen | undefined {
     if (this._customizeScreen) return this._customizeScreen
-    if (this.getEmulatorDeviceItem().getContent().deviceType === 'foldable' && this.options.productConfigItem.getContent().name === 'Customize' && 'customizeScreen' in this.options && 'customizeFoldableScreen' in this.options) {
+    if (
+      this.getEmulatorDeviceItem().getContent().deviceType === 'foldable'
+      && this.options.productConfigItem.getContent().name === 'Customize'
+      && 'customizeScreen' in this.options && this.options.customizeScreen !== undefined && this.options.customizeScreen !== null
+      && 'customizeFoldableScreen' in this.options && this.options.customizeFoldableScreen !== undefined && this.options.customizeFoldableScreen !== null
+    ) {
       this._customizeScreen = new CustomizeFoldableScreenImpl(this, this.options.customizeScreen, this.options.customizeFoldableScreen)
     }
-    else if (this.options.productConfigItem.getContent().name === 'Customize' && 'customizeScreen' in this.options) {
+    else if (
+      this.options.productConfigItem.getContent().name === 'Customize'
+      && 'customizeScreen' in this.options && this.options.customizeScreen !== undefined && this.options.customizeScreen !== null
+    ) {
       this._customizeScreen = new CustomizeScreenImpl(this, this.options.customizeScreen)
     }
     return this._customizeScreen

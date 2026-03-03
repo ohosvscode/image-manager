@@ -18,7 +18,7 @@ export namespace ConfigIniFile {
   export type GenericContent<
     ProductDeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,
     ProductName extends ProductConfigFile.GenericContent<ProductDeviceType>['name'] = ProductConfigFile.GenericContent<ProductDeviceType>['name'],
-  > = Content & { productModel: ProductName }
+  > = Content & { productModel?: ProductName }
 
   export interface Serializable<
     ProductDeviceType extends ProductConfigFile.DeviceType = ProductConfigFile.DeviceType,

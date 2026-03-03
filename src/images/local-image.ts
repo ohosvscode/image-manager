@@ -153,7 +153,7 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
     ProductName extends ProductConfigFile.GenericContent<ProductDeviceType>['name'] = ProductConfigFile.GenericContent<ProductDeviceType>['name'],
   >(options: LocalImage.CreateDeviceOptions<ProductDeviceType, ProductName>,
   ): Promise<Device<ProductDeviceType, ProductName>> {
-    const { deployedPath, imageBasePath, configPath, logPath, adapter: { join } } = this.getImageManager().getOptions()
+    const { deployedPath, configPath, logPath, sdkPath, defaultSdkPath, adapter: { join } } = this.getImageManager().getOptions()
 
     const screen = new ScreenPresetImpl(options.screen)
     const emulatorDeviceItem = screen.getEmulatorDeviceItem()
@@ -171,9 +171,9 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
       'memoryRamSize': options.memoryRamSize?.toString(),
       'dataDiskSize': options.dataDiskSize?.toString(),
       'version': this.getSdkPkgFile().data?.version ?? '',
-      'imageDir': this.getRelativePath(),
-      'showVersion': this.getSdkPkgFile().data?.guestVersion ?? '',
-      'harmonyos.sdk.path': imageBasePath.fsPath,
+      'imageDir': this.getRelativePath().endsWith('/') ? this.getRelativePath() : `${this.getRelativePath()}/`,
+      'showVersion': `${this.getSdkPkgFile().data?.guestVersion?.split(' ')[0]} ${this.getSdkPkgFile().data?.platformVersion}(${this.getSdkPkgFile().data?.apiVersion})`,
+      'harmonyos.sdk.path': defaultSdkPath?.fsPath ?? sdkPath.fsPath,
       'harmonyos.config.path': configPath.fsPath,
       'harmonyos.log.path': logPath.fsPath,
       'hw.apiName': this.getSdkPkgFile().data?.platformVersion ?? '',
@@ -210,13 +210,15 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
       'name': listFileItem.getContent()?.name,
       'deviceType': listFileItem.getContent()?.type,
       'deviceModel': listFileItem.getContent()?.devModel,
-      'productModel': listFileItem.getContent()?.model as ProductName,
+      'productModel': EmulatorTripleFoldItem.is(emulatorDeviceItem)
+        ? undefined
+        : listFileItem.getContent()?.model as ProductName,
       'vendorCountry': options.vendorCountry ?? 'CN',
       'uuid': listFileItem.getContent()?.uuid,
       'configPath': listFileItem.getContent()['harmonyos.config.path'],
       'logPath': listFileItem.getContent()['harmonyos.log.path'],
       'sdkPath': listFileItem.getContent()['harmonyos.sdk.path'],
-      'imageSubPath': listFileItem.getContent()?.imageDir,
+      'imageSubPath': listFileItem.getContent()?.imageDir.endsWith('/') ? listFileItem.getContent()?.imageDir : `${listFileItem.getContent()?.imageDir}/`,
       'instancePath': listFileItem.getContent()?.path,
       'os.osVersion': `${this.getSdkPkgFile().data?.guestVersion?.split(' ')[0]} ${this.getSdkPkgFile().data?.platformVersion}(${this.getApiVersion()})`,
       'os.apiVersion': this.getApiVersion().toString(),
@@ -242,6 +244,15 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
         : undefined,
       'hw.lcd.double.width': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.doubleResolutionWidth?.toString()
+        : undefined,
+      'hw.lcd.triple.diagonalSize': EmulatorTripleFoldItem.is(emulatorDeviceItem)
+        ? emulatorDeviceItem.getContent().diagonalSize.toString()
+        : undefined,
+      'hw.lcd.triple.height': EmulatorTripleFoldItem.is(emulatorDeviceItem)
+        ? emulatorDeviceItem.getContent().resolutionHeight.toString()
+        : undefined,
+      'hw.lcd.triple.width': EmulatorTripleFoldItem.is(emulatorDeviceItem)
+        ? emulatorDeviceItem.getContent().resolutionWidth.toString()
         : undefined,
       'hw.lcd.phy.height': emulatorDeviceItem.getContent()?.physicalHeight?.toString(),
       'hw.lcd.phy.width': emulatorDeviceItem.getContent()?.physicalWidth?.toString(),

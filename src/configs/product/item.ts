@@ -126,10 +126,17 @@ export namespace ProductConfigItem {
      * Whether the product is visible.
      */
     readonly visible: boolean
-    /**
-     * The dev model of the product.
-     */
-    readonly devModel?: string
+  }
+
+  export function isBaseContent(content: unknown): content is BaseContent {
+    return typeof content === 'object'
+      && content !== null
+      && 'name' in content
+      && 'screenWidth' in content
+      && 'screenHeight' in content
+      && 'screenDiagonal' in content
+      && 'screenDensity' in content
+      && 'visible' in content
   }
 
   export interface BaseFoldContent extends BaseContent {
@@ -151,6 +158,13 @@ export namespace ProductConfigItem {
     readonly outerScreenDiagonal: string
   }
 
+  export function isBaseFoldContent(content: unknown): content is BaseFoldContent {
+    return isBaseContent(content)
+      && 'outerScreenWidth' in content
+      && 'outerScreenHeight' in content
+      && 'outerScreenDiagonal' in content
+  }
+
   export interface PhoneContent extends BaseContent {
     /**
      * The name of the product.
@@ -162,11 +176,19 @@ export namespace ProductConfigItem {
     readonly oneCutoutPath?: string
   }
 
+  export function isPhoneContent(content: unknown): content is PhoneContent {
+    return isBaseContent(content)
+  }
+
   export interface TabletContent extends BaseContent {
     /**
      * The name of the product.
      */
     readonly name: TabletName | Customize
+  }
+
+  export function isTabletContent(content: unknown): content is TabletContent {
+    return isBaseContent(content)
   }
 
   export interface TwoInOneContent extends BaseContent {
@@ -176,6 +198,10 @@ export namespace ProductConfigItem {
     readonly name: TwoInOneName | Customize
   }
 
+  export function isTwoInOneContent(content: unknown): content is TwoInOneContent {
+    return isBaseContent(content)
+  }
+
   export interface FoldableContent extends BaseFoldContent {
     /**
      * The name of the product.
@@ -183,23 +209,19 @@ export namespace ProductConfigItem {
     readonly name: FoldableName | Customize
   }
 
+  export function isFoldableContent(content: unknown): content is FoldableContent {
+    return isBaseFoldContent(content)
+  }
+
   export interface WideFoldContent extends BaseFoldContent {
     /**
      * The name of the product.
      */
     readonly name: WideFoldName
-    /**
-     * The outer screen width of the product.
-     */
-    readonly outerScreenWidth: string
-    /**
-     * The outer screen height of the product.
-     */
-    readonly outerScreenHeight: string
-    /**
-     * The outer screen diagonal of the product.
-     */
-    readonly outerScreenDiagonal: string
+  }
+
+  export function isWideFoldContent(content: unknown): content is WideFoldContent {
+    return isBaseFoldContent(content)
   }
 
   export interface TripleFoldContent extends BaseFoldContent {
@@ -221,11 +243,22 @@ export namespace ProductConfigItem {
     readonly outerDoubleScreenDiagonal: string
   }
 
+  export function isTripleFoldContent(content: BaseFoldContent): content is TripleFoldContent {
+    return isBaseFoldContent(content)
+      && 'outerDoubleScreenWidth' in content
+      && 'outerDoubleScreenHeight' in content
+      && 'outerDoubleScreenDiagonal' in content
+  }
+
   export interface TwoInOneFoldableContent extends BaseFoldContent {
     /**
      * The name of the product.
      */
     readonly name: TwoInOneFoldableName
+  }
+
+  export function isTwoInOneFoldableContent(content: unknown): content is TwoInOneFoldableContent {
+    return isBaseFoldContent(content)
   }
 
   export interface TVContent extends BaseContent {
@@ -235,6 +268,10 @@ export namespace ProductConfigItem {
     readonly name: TVName
   }
 
+  export function isTVContent(content: unknown): content is TVContent {
+    return isBaseContent(content)
+  }
+
   export interface WearableContent extends BaseContent {
     /**
      * The name of the product.
@@ -242,11 +279,19 @@ export namespace ProductConfigItem {
     readonly name: WearableName
   }
 
+  export function isWearableContent(content: unknown): content is WearableContent {
+    return isBaseContent(content)
+  }
+
   export interface WearableKidContent extends BaseContent {
     /**
      * The name of the product.
      */
     readonly name: WearableKidName
+  }
+
+  export function isWearableKidContent(content: unknown): content is WearableKidContent {
+    return isBaseContent(content)
   }
 
   export type Content
