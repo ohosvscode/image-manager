@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.12-beta.2
+
+### Patch Changes
+
+- b31f643: fix: fix findDeviceItems in triplefold
+
 ## 0.5.12-beta.1
 
 ### Patch Changes
