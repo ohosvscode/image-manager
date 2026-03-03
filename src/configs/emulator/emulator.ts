@@ -140,12 +140,12 @@ export class EmulatorFileImpl extends SerializableFileImpl<EmulatorFile.Content>
           items.push(item)
         }
       }
-      else if (EmulatorFoldItem.is(item)) {
+      else if (EmulatorTripleFoldItem.is(item)) {
         if ((options.apiVersion && item.getContent().api === options.apiVersion) && (options.deviceType && item.getContent().deviceType === options.deviceType)) {
           items.push(item)
         }
       }
-      else if (EmulatorTripleFoldItem.is(item)) {
+      else if (EmulatorFoldItem.is(item)) {
         if ((options.apiVersion && item.getContent().api === options.apiVersion) && (options.deviceType && item.getContent().deviceType === options.deviceType)) {
           items.push(item)
         }

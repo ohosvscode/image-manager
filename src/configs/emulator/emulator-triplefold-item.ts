@@ -30,7 +30,11 @@ export namespace EmulatorTripleFoldItem {
   }
 
   export function isContent(value: unknown): value is Content {
-    return typeof value === 'object' && value !== null && 'name' in value && 'deviceType' in value && isDeviceType(value.deviceType)
+    return typeof value === 'object'
+      && value !== null
+      && 'name' in value
+      && 'deviceType' in value
+      && isDeviceType(value.deviceType)
   }
 }
 
