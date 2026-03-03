@@ -171,7 +171,7 @@ export namespace OptionsResolver {
       cachePath,
       sdkPath,
       defaultSdkPath: await fs.isDirectory(resolveDefaultSdkPath()).then(
-        isDirectory => isDirectory ? resolveDefaultSdkPath() : undefined,
+        isDirectory => isDirectory ? join(resolveDefaultSdkPath(), '..', '..') : undefined,
         () => undefined,
       ),
       configPath,

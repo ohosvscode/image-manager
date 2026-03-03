@@ -229,13 +229,19 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
       'hw.lcd.density': emulatorDeviceItem.getContent()?.density?.toFixed(),
       'hw.lcd.single.diagonalSize': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.singleDiagonalSize?.toString()
-        : undefined,
+        : EmulatorFoldItem.is(emulatorDeviceItem)
+          ? emulatorDeviceItem.getContent()?.diagonalSize?.toString()
+          : undefined,
       'hw.lcd.single.height': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.singleResolutionHeight?.toString()
-        : undefined,
+        : EmulatorFoldItem.is(emulatorDeviceItem)
+          ? emulatorDeviceItem.getContent()?.resolutionHeight?.toString()
+          : undefined,
       'hw.lcd.single.width': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.singleResolutionWidth?.toString()
-        : undefined,
+        : EmulatorFoldItem.is(emulatorDeviceItem)
+          ? emulatorDeviceItem.getContent()?.resolutionWidth?.toString()
+          : undefined,
       'hw.lcd.double.diagonalSize': EmulatorTripleFoldItem.is(emulatorDeviceItem)
         ? emulatorDeviceItem.getContent()?.doubleDiagonalSize?.toString()
         : undefined,
