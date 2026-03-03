@@ -55,11 +55,11 @@ export class EmulatorGroupItemImpl extends SerializableContentImpl<EmulatorGroup
       if (EmulatorBasicItem.isContent(children)) {
         return new EmulatorBasicItemImpl(this.emulatorFile, children)
       }
-      else if (EmulatorFoldItem.isContent(children)) {
-        return new EmulatorFoldItemImpl(this.emulatorFile, children)
-      }
       else if (EmulatorTripleFoldItem.isContent(children)) {
         return new EmulatorTripleFoldItemImpl(this.emulatorFile, children)
+      }
+      else if (EmulatorFoldItem.isContent(children)) {
+        return new EmulatorFoldItemImpl(this.emulatorFile, children)
       }
     }).filter(Boolean) as EmulatorFile.DeviceItem[]
   }

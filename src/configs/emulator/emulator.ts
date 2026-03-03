@@ -88,11 +88,11 @@ export class EmulatorFileImpl extends SerializableFileImpl<EmulatorFile.Content>
         if (EmulatorBasicItem.isContent(item)) {
           return new EmulatorBasicItemImpl(this, item)
         }
-        else if (EmulatorFoldItem.isContent(item)) {
-          return new EmulatorFoldItemImpl(this, item)
-        }
         else if (EmulatorTripleFoldItem.isContent(item)) {
           return new EmulatorTripleFoldItemImpl(this, item)
+        }
+        else if (EmulatorFoldItem.isContent(item)) {
+          return new EmulatorFoldItemImpl(this, item)
         }
       }
     }).filter(Boolean) as EmulatorFile.Item[]

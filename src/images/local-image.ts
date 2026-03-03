@@ -224,7 +224,7 @@ export class LocalImageImpl extends BaseImageImpl implements LocalImage {
       'os.apiVersion': this.getApiVersion().toString(),
       'os.softwareVersion': this.getSdkPkgFile().data?.version ?? '',
       'os.isPublic': (options.isPublic ?? true) ? 'true' : 'false',
-      'hw.cpu.arch': this.getImageManager().getArch().toLowerCase(),
+      'hw.cpu.arch': this.getImageManager().getArch(),
       'hw.cpu.ncore': listFileItem.getContent()?.cpuNumber,
       'hw.lcd.density': emulatorDeviceItem.getContent()?.density?.toFixed(),
       'hw.lcd.single.diagonalSize': EmulatorTripleFoldItem.is(emulatorDeviceItem)

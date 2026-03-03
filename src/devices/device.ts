@@ -177,9 +177,7 @@ export class DeviceImpl<
       fs.delete(join(deployedPath, `${this.getListsFileItem().getContent().name}.ini`), { recursive: false }),
       this.getImageManager().readListsFile().then(
         async (listsFile) => {
-          const listsFileItem = listsFile.getListsFileItems().find((item) => {
-            return item.getContent().name === this.getListsFileItem().getContent().name
-          })
+          const listsFileItem = listsFile.getListsFileItems().find(item => item.getContent().name === this.getListsFileItem().getContent().name)
           if (!listsFileItem) return
           await listsFile.deleteListsFileItem(listsFileItem).write()
         },
