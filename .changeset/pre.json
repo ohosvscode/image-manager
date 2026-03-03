@@ -5,6 +5,7 @@
     "@arkts/image-manager": "0.5.11"
   },
   "changesets": [
+    "curvy-kids-ask",
     "dry-cars-argue",
     "dry-suits-bet",
     "nice-trains-strive",
