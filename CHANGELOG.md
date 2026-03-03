@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.12-beta.1
+
+### Patch Changes
+
+- fe0fcc1: fix: fix triplefold configuration in getItems, getChildren
+
 ## 0.5.12-beta.0
 
 ### Patch Changes
