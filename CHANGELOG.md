@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.12-beta.0
+
+### Patch Changes
+
+- 823b315: fix: fix triplefold configuration
+
 ## 0.5.11
 
 ### Patch Changes

@@ -4,5 +4,7 @@
   "initialVersions": {
     "@arkts/image-manager": "0.5.11"
   },
-  "changesets": []
+  "changesets": [
+    "tasty-flowers-fix"
+  ]
 }
