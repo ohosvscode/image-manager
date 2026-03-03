@@ -5,6 +5,7 @@
     "@arkts/image-manager": "0.5.11"
   },
   "changesets": [
+    "dry-cars-argue",
     "nice-trains-strive",
     "tasty-flowers-fix"
   ]
