@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@arkts/image-manager": "0.5.11"
+  },
+  "changesets": []
+}
