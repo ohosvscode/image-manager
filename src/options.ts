@@ -50,8 +50,8 @@ export namespace OptionsResolver {
     function resolveDefaultImageBasePath(): import('vscode-uri').URI {
       switch (process.platform) {
         case 'win32':
-          return typeof process.env.APPDATA === 'string' && process.env.APPDATA.length > 0
-            ? join(URI.file(process.env.APPDATA), 'Local', 'Huawei', 'Sdk')
+          return typeof process.env.LOCALAPPDATA === 'string' && process.env.LOCALAPPDATA.length > 0
+            ? join(URI.file(process.env.LOCALAPPDATA), 'Local', 'Huawei', 'Sdk')
             : join(URI.file(os.homedir()), 'AppData', 'Local', 'Huawei', 'Sdk')
         case 'darwin':
           return join(URI.file(os.homedir()), 'Library', 'Huawei', 'Sdk')
@@ -63,8 +63,8 @@ export namespace OptionsResolver {
     function resolveDefaultDeployedPath(): import('vscode-uri').URI {
       switch (process.platform) {
         case 'win32':
-          return typeof process.env.APPDATA === 'string' && process.env.APPDATA.length > 0
-            ? join(URI.file(process.env.APPDATA), 'Local', 'Huawei', 'Emulator', 'deployed')
+          return typeof process.env.LOCALAPPDATA === 'string' && process.env.LOCALAPPDATA.length > 0
+            ? join(URI.file(process.env.LOCALAPPDATA), 'Local', 'Huawei', 'Emulator', 'deployed')
             : join(URI.file(os.homedir()), 'AppData', 'Local', 'Huawei', 'Emulator', 'deployed')
         default:
           return join(URI.file(os.homedir()), '.Huawei', 'Emulator', 'deployed')
@@ -87,7 +87,9 @@ export namespace OptionsResolver {
         case 'darwin':
           return join(URI.file(os.homedir()), 'Library', 'Application Support', 'Huawei', 'DevEcoStudio6.0')
         case 'win32':
-          return join(URI.file(process.env.APPDATA ?? os.homedir()), 'Roaming', 'Huawei', 'DevEcoStudio6.0')
+          return typeof process.env.APPDATA === 'string' && process.env.APPDATA.length > 0
+            ? join(URI.file(process.env.APPDATA), 'Huawei', 'DevEcoStudio6.0')
+            : join(URI.file(os.homedir()), 'AppData', 'Roaming', 'Huawei', 'DevEcoStudio6.0')
         default:
           return join(URI.file(os.homedir()), '.Huawei', 'DevEcoStudio6.0')
       }
@@ -98,7 +100,9 @@ export namespace OptionsResolver {
         case 'darwin':
           return join(URI.file(os.homedir()), 'Library', 'Logs', 'Huawei', 'DevEcoStudio6.0')
         case 'win32':
-          return join(URI.file(process.env.APPDATA ?? os.homedir()), 'Local', 'Huawei', 'DevEcoStudio6.0', 'log')
+          return typeof process.env.LOCALAPPDATA === 'string' && process.env.LOCALAPPDATA.length > 0
+            ? join(URI.file(process.env.LOCALAPPDATA), 'Huawei', 'DevEcoStudio6.0', 'log')
+            : join(URI.file(os.homedir()), 'AppData', 'Local', 'Huawei', 'DevEcoStudio6.0', 'log')
         default:
           return join(URI.file(os.homedir()), '.Huawei', 'DevEcoStudio6.0', 'log')
       }
