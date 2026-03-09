@@ -1,5 +1,11 @@
 # @arkts/image-manager
 
+## 0.5.12-beta.6
+
+### Patch Changes
+
+- 07f0ff8: fix: fix default path on Windows
+
 ## 0.5.12-beta.5
 
 ### Patch Changes
